@@ -98,6 +98,9 @@ export class Store {
             case 'CAST_COMMANDER':
                 this._castCommander(payload);
                 break;
+            case 'TOGGLE_NO_MAX_HAND':
+                this._toggleNoMaxHand(payload);
+                break;
             case 'MOVE_CARD':
                 this._moveCard(payload);
                 break;
@@ -133,6 +136,9 @@ export class Store {
                 break;
             case 'ADJUST_HAND_COMPLEX':
                 this._adjustHandComplex(payload);
+                break;
+            case 'CHANGE_CONTROL':
+                this._changeControl(payload);
                 break;
             // Add more actions as needed
         }
@@ -193,7 +199,7 @@ export class Store {
                 card.type_line = `${card.type_line} ${type.trim()}`;
             }
 
-            this._log(`${this.state.players.find(p => p.id === playerId).name} updated status of ${card.name}. P/T: ${card.power}/${card.toughness}, Type: ${card.type_line}`);
+            this._log(`${this.state.players.find(p => p.id === playerId).name} updated status of {${card.name}}. P/T: ${card.power}/${card.toughness}, Type: ${card.type_line}`);
         }
     }
 
@@ -241,11 +247,11 @@ export class Store {
         if (sourceCard.attachedTo === targetId) {
             // Unequip
             delete sourceCard.attachedTo;
-            this._log(`${state.players.find(p => p.id === playerId).name}'s ${sourceCard.name} unequipped from ${targetName}.`);
+            this._log(`${state.players.find(p => p.id === playerId).name}'s {${sourceCard.name}} unequipped from ${targetName}.`);
         } else {
             // Equip
             sourceCard.attachedTo = targetId;
-            this._log(`${state.players.find(p => p.id === playerId).name}'s ${sourceCard.name} attached to ${targetName} (${targetPlayerName}).`);
+            this._log(`${state.players.find(p => p.id === playerId).name}'s {${sourceCard.name}} attached to ${targetName} (${targetPlayerName}).`);
         }
     }
 
@@ -282,7 +288,7 @@ export class Store {
             zone.battlefield.push(token);
         }
 
-        this._log(`${this.state.players.find(p => p.id === playerId).name} created ${count} ${name} token(s).`);
+        this._log(`${this.state.players.find(p => p.id === playerId).name} created ${count} {${name}} token(s).`);
     }
 
     _updatePlayerCounter({ playerId, counterName, count }) {
@@ -384,7 +390,7 @@ export class Store {
             // TOKEN/COPY HANDLING: Tokens and Copies cease to exist if they leave the battlefield
             if (card.isToken || card.isCopy) {
                 const typeLabel = card.isToken ? 'Token' : 'Copy';
-                this._log(`${this.state.players.find(p => p.id === playerId).name}'s ${typeLabel} ${card.name} was removed from the game.`);
+                this._log(`${this.state.players.find(p => p.id === playerId).name}'s ${typeLabel} {${card.name}} was removed from the game.`);
                 // Do NOT add to destination, do NOT increment library/hand counts.
                 return;
             }
@@ -397,7 +403,7 @@ export class Store {
                 if (destination === 'library') {
                     const player = this.state.players.find(p => p.id === playerId);
                     player.libraryCount++;
-                    this._log(`${player.name} moved Commander ${card.name} to Library. (Deck: ${player.libraryCount})`);
+                    this._log(`${player.name} moved Commander {${card.name}} to Library. (Deck: ${player.libraryCount})`);
                 }
 
                 card.commanderStatus = destination; // 'library'
@@ -409,46 +415,66 @@ export class Store {
             if (destination === 'library') {
                 const player = this.state.players.find(p => p.id === playerId);
                 player.libraryCount++;
-                this._log(`${player.name} moved ${card.name} to Library (Bottom). (Deck: ${player.libraryCount})`);
-                // Note: Card is effectively removed from game state tracking completely as we don't track inside of library.
-                // So we don't push it to any zone array.
-            } else if (zone[destination]) {
-                if (destination === 'hand') {
-                    const player = this.state.players.find(p => p.id === playerId);
-                    player.handCount++;
-                }
-
-                // Commander Tax Logic: Add +2 when entering Command Zone
-                if (destination === 'command' && card.isCommander) {
-                    card.commanderTax = (card.commanderTax || 0) + 2;
-                    delete card.commanderStatus; // Reset status if returning to zone normally
-                }
-
-                if (destination === 'battlefield') {
-                    card.tapped = false;
-                    delete card.commanderStatus;
-                }
-
-                // For Grave, we keep it in zone.grave so it shows in Used list (as requested implicitly by "unlike exile")
-                // But CommanderZone.js picks it up. 
-                // Wait, if I move to Grave, existing logic puts it in zone['grave'].
-                // CommanderZone.js scans zone['grave']. This is preserved.
-
-                zone[destination].push(card);
-                console.log(`Moved card to ${destination}. Zone count: ${zone[destination].length}`);
-
-                const destName = {
-                    'command': 'Command Zone',
-                    'grave': 'Graveyard',
-                    'exile': 'Exile',
-                    'hand': 'Hand',
-                    'battlefield': 'Battlefield'
-                }[destination] || destination;
-
-                this._log(`${this.state.players.find(p => p.id === playerId).name} moved ${card.name} to ${destName}. ${destination === 'command' ? '(Tax +2)' : ''}`);
+                this._log(`${player.name} moved {${card.name}} to Library (Bottom). (Deck: ${player.libraryCount})`);
             } else {
-                console.error(`Invalid destination zone: ${destination}`);
-                zone.grave.push(card); // Fallback
+                // Ownership Logic: If leaving battlefield (and not to battlefield), return to OWNER's zone
+                let targetZone = zone;
+                let targetPlayerId = playerId;
+
+                if (destination !== 'battlefield' && card.ownerId && card.ownerId !== playerId) {
+                    targetZone = this.state.zones[card.ownerId];
+                    targetPlayerId = card.ownerId;
+                    console.log(`Return to owner triggered: ${card.name} -> ${targetPlayerId}'s ${destination}`);
+                }
+
+                if (targetZone[destination]) {
+                    if (destination === 'hand') {
+                        const tPlayer = this.state.players.find(p => p.id === targetPlayerId);
+                        tPlayer.handCount++;
+                    }
+
+                    // Commander Tax Logic
+                    if (destination === 'command' && card.isCommander) {
+                        card.commanderTax = (card.commanderTax || 0) + 2;
+                        delete card.commanderStatus;
+                    }
+
+                    if (destination === 'battlefield') {
+                        card.tapped = false;
+                        delete card.commanderStatus;
+                    }
+
+                    targetZone[destination].push(card);
+
+                    const destName = {
+                        'command': 'Command Zone',
+                        'grave': 'Graveyard',
+                        'exile': 'Exile',
+                        'hand': 'Hand',
+                        'battlefield': 'Battlefield'
+                    }[destination] || destination;
+
+                    let suffix = '';
+                    if (destination === 'command' && card.isCommander) {
+                        suffix += ` (TAX{${card.name}}：${card.commanderTax})`;
+                    }
+                    if (destination === 'hand') {
+                        const tPlayer = this.state.players.find(p => p.id === targetPlayerId);
+                        suffix += ` (Hand:${tPlayer.name}:${tPlayer.handCount})`;
+                    }
+
+                    const actPlayer = this.state.players.find(p => p.id === playerId).name;
+                    const ownerName = (targetPlayerId !== playerId) ? this.state.players.find(p => p.id === targetPlayerId).name : '';
+
+                    if (targetPlayerId !== playerId) {
+                        this._log(`${actPlayer} returned {${card.name}} to ${ownerName}'s ${destName}.${suffix}`);
+                    } else {
+                        this._log(`${actPlayer} moved {${card.name}} to ${destName}.${suffix}`);
+                    }
+                } else {
+                    console.error(`Invalid destination zone: ${destination}`);
+                    zone.grave.push(card); // Fallback to controller's grave if error
+                }
             }
         }
     }
@@ -508,7 +534,8 @@ export class Store {
                     commanderDamage: {},
                     commanders: commanders,
                     eliminated: false,
-                    isPartner: isPartner
+                    isPartner: isPartner,
+                    noMaxHandSize: false // Default: Limit 7
                 };
             });
 
@@ -560,6 +587,15 @@ export class Store {
             };
             this.state.gameStarted = true;
 
+            // Log Mulligan Info
+            this.state.players.forEach(p => {
+                if (p.mulliganCount > 0) {
+                    this._log(`${p.name} started with ${p.mulliganCount} mulligan(s) (${p.name}:${p.handCount}).`);
+                } else {
+                    this._log(`${p.name} kept starting hand (Mulligan: 0, ${p.name}:${p.handCount}).`);
+                }
+            });
+
             // Start the first turn properly (Trigger Untap/Draw/Deck-1)
             this._nextTurn();
         } catch (e) {
@@ -576,7 +612,7 @@ export class Store {
 
             if (player.life <= 0) {
                 player.eliminated = true;
-                this._log(`${player.icon} ${player.name} has been eliminated (Life 0).`);
+                this._log(`${player.name} has been eliminated (Life 0).`);
                 this._checkWinner();
             }
         }
@@ -593,21 +629,27 @@ export class Store {
             // Also reduce life
             player.life -= amount; // Damage reduces life
 
-            this._log(`${player.name} took ${amount} commander damage from ${sourceName}. (Total CMD Dmg: ${player.commanderDamage[sourceId]})`);
+            // Find Attacker Name (Owner of the source)
+            // We can find ownerId from the card ID or from players' commanders list
+            let attackerName = "Unknown";
+            const owner = this.state.players.find(p => p.commanders && p.commanders.some(c => c.id === sourceId));
+            if (owner) attackerName = owner.name;
+
+            this._log(`(CMDdmg：${attackerName}｛${sourceName}}→${player.name}：${player.commanderDamage[sourceId]})`);
 
             let eliminated = false;
             // Check Elimination (21 damage rule)
             if (player.commanderDamage[sourceId] >= 21) {
                 player.eliminated = true;
                 eliminated = true;
-                this._log(`${player.icon} ${player.name} has been eliminated (21+ Commander Damage from ${sourceName}).`);
+                this._log(`${player.name} has been eliminated (21+ Commander Damage from ${sourceName}).`);
             }
 
             // Check Life Elimination
             if (player.life <= 0 && !player.eliminated) { // Avoid double log
                 player.eliminated = true;
                 eliminated = true;
-                this._log(`${player.icon} ${player.name} has been eliminated (Life 0).`);
+                this._log(`${player.name} has been eliminated (Life 0).`);
             }
 
             if (eliminated) this._checkWinner();
@@ -619,7 +661,11 @@ export class Store {
         if (player && !player.eliminated) {
             player.handCount += amount;
             if (player.handCount < 0) player.handCount = 0;
-            this._log(`${player.name}'s hand count changed by ${amount > 0 ? '+' + amount : amount}. Current: ${player.handCount}`);
+            // New Format: (Hand:PlayerName:Count)
+            // Also keep the delta explanation for clarity or just replace? 
+            // User asked to CHANGE the format. 
+            // "handボタンにて...ログの取得を(Hand:プレイヤー名:手札枚数)と変更してください"
+            this._log(`(Hand:${player.name}:${player.handCount})`);
         }
     }
 
@@ -640,22 +686,23 @@ export class Store {
             const isSpell = lowerType.includes('instant') || lowerType.includes('sorcery') ||
                 lowerType.includes('インスタント') || lowerType.includes('ソーサリー');
 
-            if (isSpell && !isLand) {
-                zone.grave.push(card);
-                this._log(`${this.state.players.find(p => p.id === playerId).name} used ${card.name}.`);
-            } else {
-                zone.battlefield.push(card);
-                this._log(`${this.state.players.find(p => p.id === playerId).name} added ${card.name} to battlefield.`);
-            }
-
             // User Request: Decrement hand count when adding card via +Card
             const player = this.state.players.find(p => p.id === playerId);
+            let suffix = '';
             if (player) {
                 const oldHand = player.handCount;
                 player.handCount = Math.max(0, player.handCount - 1);
                 if (oldHand !== player.handCount) {
-                    this._log(`${player.name}'s hand count changed by -1. Current: ${player.handCount}`);
+                    suffix = ` (Hand:${player.name}:${player.handCount})`;
                 }
+            }
+
+            if (isSpell && !isLand) {
+                zone.grave.push(card);
+                this._log(`${this.state.players.find(p => p.id === playerId).name} used {${card.name}}.${suffix}`);
+            } else {
+                zone.battlefield.push(card);
+                this._log(`${this.state.players.find(p => p.id === playerId).name} added {${card.name}} to battlefield.${suffix}`);
             }
         }
     }
@@ -666,7 +713,7 @@ export class Store {
             const card = zone.battlefield.find(c => c.instanceId === cardId);
             if (card) {
                 card.tapped = !card.tapped;
-                this._log(`${this.state.players.find(p => p.id === playerId).name} ${card.tapped ? 'tapped' : 'untapped'} ${card.name}.`);
+                this._log(`${this.state.players.find(p => p.id === playerId).name} ${card.tapped ? 'tapped' : 'untapped'} {${card.name}}.`);
             }
         }
     }
@@ -680,7 +727,7 @@ export class Store {
             card.counters[counterType] += value;
             if (card.counters[counterType] <= 0) delete card.counters[counterType]; // Remove if 0
 
-            this._log(`${this.state.players.find(p => p.id === playerId).name} ${value > 0 ? 'added' : 'removed'} ${Math.abs(value)} ${counterType} counter(s) on ${card.name}.`);
+            this._log(`${this.state.players.find(p => p.id === playerId).name} ${value > 0 ? 'added' : 'removed'} ${Math.abs(value)} ${counterType} counter(s) on {${card.name}}.`);
         }
     }
 
@@ -695,10 +742,18 @@ export class Store {
                 // Return to Command Zone
                 card.commanderTax = (card.commanderTax || 0) + 2;
                 zone.command.push(card);
-                this._log(`${this.state.players.find(p => p.id === playerId).name}'s Commander ${card.name} returned to Command Zone.`);
+                this._log(`${this.state.players.find(p => p.id === playerId).name}'s Commander {${card.name}} returned to Command Zone.`);
+                this._log(`(TAX{${card.name}}：${card.commanderTax})`);
             } else {
-                zone.grave.push(card);
-                this._log(`${this.state.players.find(p => p.id === playerId).name}'s ${card.name} was moved to graveyard.`);
+                // Ownership Check
+                if (card.ownerId && card.ownerId !== playerId) {
+                    this.state.zones[card.ownerId].grave.push(card);
+                    const ownerName = this.state.players.find(p => p.id === card.ownerId).name;
+                    this._log(`${this.state.players.find(p => p.id === playerId).name}'s {${card.name}} was returned to ${ownerName}'s graveyard.`);
+                } else {
+                    zone.grave.push(card);
+                    this._log(`${this.state.players.find(p => p.id === playerId).name}'s {${card.name}} was moved to graveyard.`);
+                }
             }
         }
     }
@@ -718,11 +773,31 @@ export class Store {
             clone.commanderTax = 0;
             // Keep image and other data
             zone.battlefield.push(clone);
-            this._log(`${this.state.players.find(p => p.id === playerId).name} created a copy of ${card.name}.`);
+            this._log(`${this.state.players.find(p => p.id === playerId).name} created a copy of {${card.name}}.`);
         }
     }
 
     _nextTurn() {
+        // --- END OF TURN CLEANUP (Current Player) ---
+        if (this.state.turn.activePlayerId) {
+            const currentPlayer = this.state.players.find(p => p.id === this.state.turn.activePlayerId);
+            if (currentPlayer && !currentPlayer.eliminated) {
+                // Check Hand Limit
+                if (!currentPlayer.noMaxHandSize && currentPlayer.handCount > 7) {
+                    const excess = currentPlayer.handCount - 7;
+                    // Auto-discard to Graveyard
+                    // Auto-discard to Graveyard
+                    this._adjustHandComplex({
+                        playerId: currentPlayer.id,
+                        amount: -excess,
+                        destination: 'grave', // Explicitly move to grave
+                        silent: true // Custom log below
+                    });
+                    this._log(`[End Phase] ${currentPlayer.name} discarded ${excess} cards to Graveyard (Hand Limit > 7) (Hand:${currentPlayer.name}:${currentPlayer.handCount}).`);
+                }
+            }
+        }
+
         // Find next non-eliminated player
         const playerIds = this.state.players.map(p => p.id);
         let currentIndex = playerIds.indexOf(this.state.turn.activePlayerId);
@@ -751,7 +826,7 @@ export class Store {
         nextPlayer.handCount++;
         nextPlayer.libraryCount--; // Draw from library
 
-        this._log(`Turn ${this.state.turn.count}: ${nextPlayer.icon} ${nextPlayer.name}'s turn. Untap & Draw.`);
+        this._log(`Turn ${this.state.turn.count}: ${nextPlayer.name}'s turn. Untap & Draw. (Hand:${nextPlayer.name}:${nextPlayer.handCount})`);
     }
 
     _log(message) {
@@ -770,7 +845,7 @@ export class Store {
         if (alivePlayers.length === 1) {
             const winner = alivePlayers[0];
             this.state.winner = winner;
-            this._log(`GAME OVER! Winner: ${winner.icon} ${winner.name}`);
+            this._log(`GAME OVER! Winner: ${winner.name}`);
         }
     }
 
@@ -798,7 +873,7 @@ export class Store {
             // card.commanderTax = (card.commanderTax || 0) + 2;
 
             zone.battlefield.push(card);
-            this._log(`${this.state.players.find(p => p.id === playerId).name} cast Commander ${card.name} from Command Zone.`);
+            this._log(`${this.state.players.find(p => p.id === playerId).name} cast Commander {${card.name}} from Command Zone.`);
         }
     }
 
@@ -872,7 +947,15 @@ export class Store {
         }
 
         if (!silent) {
-            this._log(`${player.name} adjusted Hand by ${amount > 0 ? '+' : ''}${amount}. (Total: ${player.handCount})`);
+            this._log(`${player.name} adjusted Hand by ${amount > 0 ? '+' : ''}${amount}. (Hand:${player.name}:${player.handCount})`);
+        }
+    }
+
+    _toggleNoMaxHand({ playerId, value }) {
+        const player = this.state.players.find(p => p.id === playerId);
+        if (player) {
+            player.noMaxHandSize = value;
+            this._log(`${player.name} ${value ? 'enabled' : 'disabled'} "No Max Hand Size".`);
         }
     }
 
@@ -898,5 +981,28 @@ export class Store {
         };
         document.body.classList.remove('game-active'); // Revert to detailed background
         this._log('Game has been restarted.');
+    }
+    _changeControl({ cardId, currentControllerId, newControllerId }) {
+        const state = this.state;
+        const sourceZone = state.zones[currentControllerId].battlefield;
+        const targetZone = state.zones[newControllerId].battlefield;
+
+        const idx = sourceZone.findIndex(c => c.instanceId === cardId || c.id === cardId);
+        if (idx > -1) {
+            const card = sourceZone[idx];
+
+            if (!card.ownerId) {
+                card.ownerId = currentControllerId;
+            }
+
+            sourceZone.splice(idx, 1);
+            card.tapped = false; // Optional reset
+
+            targetZone.push(card);
+
+            const newControllerName = state.players.find(p => p.id === newControllerId).name;
+            const cardName = card.name;
+            this._log(`${state.players.find(p => p.id === currentControllerId).name} gave control of {${cardName}} to ${newControllerName}.`);
+        }
     }
 }

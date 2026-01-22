@@ -184,7 +184,8 @@ export class SetupModal {
                             previewText.textContent = card.name;
                             previewText.style.color = '#fff';
                             if (card.image_url) {
-                                previewImgContainer.innerHTML = `<img src="${card.image_url}" style="height: 60px; border-radius: 4px;">`;
+                                previewImgContainer.style.flexShrink = '0';
+                                previewImgContainer.innerHTML = `<img src="${card.image_url}" style="height: 60px; max-width: 100px; border-radius: 4px; object-fit: contain; display: block;">`;
                             } else {
                                 previewImgContainer.innerHTML = '<span style="font-size:0.8rem">No Image</span>';
                             }

@@ -73,6 +73,11 @@ export class ContextMenu {
                 if (isEquipOrAura) {
                     menuItems.splice(1, 0, { label: 'Equip / Aura', action: 'EQUIP_OR_AURA', card: card });
                 }
+
+                if (!isBatch) {
+                    // Add Control Change Option (Single Target Only)
+                    menuItems.splice(menuItems.length - 1, 0, { label: 'Control', action: 'CHANGE_CONTROL', card: card });
+                }
             }
 
         } else if (type === 'commander') {
@@ -96,6 +101,11 @@ export class ContextMenu {
                     import('./CounterModal.js?v=' + Date.now()).then(({ CounterModal }) => {
                         // Pass Array if batch, or assume CounterModal logic will be updated
                         const modal = new CounterModal(this.store, playerId, isBatch ? targetIds : primaryTargetId);
+                        document.body.appendChild(modal.render());
+                    });
+                } else if (item.action === 'CHANGE_CONTROL') {
+                    import('./ControlSelectModal.js?v=' + Date.now()).then(({ ControlSelectModal }) => {
+                        const modal = new ControlSelectModal(this.store, item.card, playerId);
                         document.body.appendChild(modal.render());
                     });
                 } else if (item.action === 'OPEN_TOKEN_MODAL') {

@@ -35,6 +35,14 @@ export class HandStatusModal {
                         <option value="grave">Graveyard</option>
                         <option value="exile">Exile</option>
                     </select>
+
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; justify-content: center; width: 100%;">
+                        <label class="hud-checkbox-container">
+                            <input type="checkbox" id="no-max-hand">
+                            <span class="hud-checkbox-mark"></span>
+                            No Max Hand Size
+                        </label>
+                    </div>
                 </div>
 
                 <div style="display: flex; justify-content: center; align-items: center; gap: 1rem;">
@@ -58,6 +66,15 @@ export class HandStatusModal {
         select.value = this.destination;
         select.addEventListener('change', (e) => {
             this.destination = e.target.value;
+        });
+
+        const noMaxCheck = this.element.querySelector('#no-max-hand');
+        noMaxCheck.checked = player.noMaxHandSize || false;
+        noMaxCheck.addEventListener('change', (e) => {
+            this.store.dispatch('TOGGLE_NO_MAX_HAND', {
+                playerId: this.playerId,
+                value: e.target.checked
+            });
         });
 
         this.element.querySelectorAll('.adj-btn').forEach(btn => {
@@ -106,7 +123,7 @@ export class HandStatusModal {
 
         if (parts.length > 0) {
             const player = this.store.getState().players.find(p => p.id === this.playerId);
-            const msg = `${player.name} ${parts.join(', ')}. (Hand: ${player.handCount})`;
+            const msg = `${player.name} ${parts.join(', ')}. (Hand:${player.name}:${player.handCount})`; // Corrected Log Format
             this.store.dispatch('LOG_ACTION', msg);
         }
 

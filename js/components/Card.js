@@ -35,6 +35,21 @@ export function renderCard(card, store, playerId) {
         cardDiv.appendChild(copyBadge);
     }
 
+    // Control Change Indicator
+    if (card.ownerId && card.ownerId !== playerId) {
+        cardDiv.style.border = '2px dashed var(--neon-pink)';
+        const controlBadge = document.createElement('div');
+        controlBadge.innerHTML = '⚠️ CONTROLLED';
+        controlBadge.style.cssText = `
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
+            background: rgba(255, 0, 85, 0.9); color: white; font-size: 0.7rem; font-weight: bold;
+            padding: 4px 8px; border-radius: 4px; z-index: 10;
+            box-shadow: 0 0 10px var(--neon-pink); pointer-events: none;
+            border: 1px solid white; white-space: nowrap; text-shadow: 1px 1px 0 black;
+        `;
+        cardDiv.appendChild(controlBadge);
+    }
+
     // Equipment/Aura Attachment Status
     if (card.attachedTo) {
         let targetName = 'Target';

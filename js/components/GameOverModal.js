@@ -86,12 +86,107 @@ export class GameOverModal {
 
         // Listeners
         this.element.querySelector('#dl-log-btn').addEventListener('click', () => {
-            const state = this.store.getState();
-            const blob = new Blob([state.logs.join('\n')], { type: 'text/plain' });
+            if (!confirm('Download game log?')) return;
+
+            const rawLogs = this.store.getState().logs.slice().reverse();
+            const players = this.store.getState().players;
+            const startingLife = this.store.getState().settings?.startingLife || 40;
+
+            // 2. Prepare Tracking State
+            let currentTurn = 0;
+            let activePlayerName = "";
+
+            // Maps
+            const lifeMap = {};
+            players.forEach(p => lifeMap[p.name] = startingLife);
+
+            // Track Commander Damage Running Totals to deduce Life Loss
+            const cmdDmgTotals = {};
+
+            // 3. Prepare CSV Header
+            // Cols: Timestamp, Turn, Active Player, Life, Message
+            // BOM included
+            let csvContent = "\uFEFFTimestamp,Turn,Active Player,Life,Message\n";
+
+            // 4. Process logs
+            rawLogs.forEach(entryStr => {
+                const match = entryStr.match(/^\[(.*?)\] (.*)$/);
+                if (!match) return; // Skip invalid format
+
+                const time = match[1];
+                let msg = match[2];
+
+                // --- State Tracking Logic --- //
+
+                // A. Check for Turn Start
+                const turnMatch = msg.match(/^Turn (\d+): (.*?)'s turn/);
+                if (turnMatch) {
+                    currentTurn = turnMatch[1];
+                    activePlayerName = turnMatch[2];
+
+                    // Clean up message
+                    const fullTurnMatch = msg.match(/^Turn (\d+): (.*)$/);
+                    if (fullTurnMatch) msg = fullTurnMatch[2];
+                }
+
+                // B. Check for Life Change
+                const lifeMatch = msg.match(/^(.*?)'s life changed.*?Current: (-?\d+)/);
+                if (lifeMatch) {
+                    const pName = lifeMatch[1];
+                    const newLife = parseInt(lifeMatch[2]);
+                    lifeMap[pName] = newLife;
+                }
+
+                // C. Check for Commander Damage (New Format)
+                // Log: (CMDdmg：Attacker｛Source}→Victim：Total)
+                const cmdRegex = /\(CMDdmg：.*?｛(.*?)\}→(.*?)：(\d+)\)/;
+                const cmdMatch = msg.match(cmdRegex);
+                if (cmdMatch) {
+                    const sourceName = cmdMatch[1];
+                    const victimName = cmdMatch[2];
+                    const newTotal = parseInt(cmdMatch[3]);
+
+                    // Initialize tracking if needed
+                    if (!cmdDmgTotals[victimName]) cmdDmgTotals[victimName] = {};
+                    const prevTotal = cmdDmgTotals[victimName][sourceName] || 0;
+
+                    const damageAmount = newTotal - prevTotal;
+
+                    // Update total
+                    cmdDmgTotals[victimName][sourceName] = newTotal;
+
+                    // Update Life (Deduce loss)
+                    if (lifeMap[victimName] !== undefined) {
+                        lifeMap[victimName] -= damageAmount;
+                    }
+                }
+
+                // D. Check for Elimination (Life 0)
+                const elimMatch = msg.match(/^(.*?) has been eliminated/);
+                if (elimMatch) {
+                    // Check if elimination was due to CMD dmg (which might be handled above, but set to 0 to be safe/consistent)
+                    lifeMap[elimMatch[1]] = 0;
+                }
+
+                // --- Row Construction ---
+                let currentLife = "";
+                if (activePlayerName && lifeMap[activePlayerName] !== undefined) {
+                    currentLife = lifeMap[activePlayerName];
+                }
+
+                // Escape quotes
+                msg = msg.replace(/"/g, '""');
+
+                // Add Row
+                csvContent += `"${time}","${currentTurn}","${activePlayerName}","${currentLife}","${msg}"\n`;
+            });
+
+            // 5. Trigger Download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `mtg-game-log-${new Date().toISOString().slice(0, 10)}.txt`;
+            a.download = `mtg-game-log-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
             a.click();
         });
 

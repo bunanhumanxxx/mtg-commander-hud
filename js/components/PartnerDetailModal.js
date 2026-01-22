@@ -81,7 +81,7 @@ export class PartnerDetailModal {
                     // The requirement says "check details", but usually you want to edit too.
                     // Let's open the StatusModal on top (z-index should handle it).
                     import('./StatusModal.js').then(({ StatusModal }) => {
-                        const modal = new StatusModal(this.store, this.playerId, 'commanderDamage', currentDmg, cmdId, `${cmdName} (${this.data.opponentName})`);
+                        const modal = new StatusModal(this.store, this.playerId, 'commanderDamage', currentDmg, cmdId, `${cmdName}`);
                         document.body.appendChild(modal.render());
                         // We might want to refresh this modal when StatusModal closes, but Store subscription handles global UI.
                         // However, this modal instance won't auto-update unless subscribed.

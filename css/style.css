@@ -116,17 +116,21 @@ h6 {
 }
 
 .main-board {
-    flex: 7;
+    flex: 1;
     display: flex;
     flex-wrap: wrap;
     height: 100%;
     border-right: 1px solid var(--border-color);
     overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .sidebar {
-    flex: 1;
+    flex: 0 0 16.666%;
+    /* Exactly 1/6 */
+    max-width: 16.666%;
     min-width: 200px;
+    /* Keep minimum but it might overflow 1/6 on small screens */
     background-color: rgba(5, 5, 10, 0.85);
     display: flex;
     flex-direction: column;
@@ -135,6 +139,9 @@ h6 {
     backdrop-filter: blur(15px);
     box-shadow: -5px 0 25px rgba(255, 0, 85, 0.2);
     z-index: 100;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .player-area {
@@ -1266,5 +1273,580 @@ button:hover {
     /* Brief subtle flash */
     100% {
         opacity: 0;
+    }
+}
+
+/* Collapsible Sidebar Layout */
+.main-layout {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.main-board {
+    flex: 1;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+}
+
+.sidebar {
+    width: 300px;
+    min-width: 300px;
+    background: rgba(0, 0, 0, 0.85);
+    border-left: 1px solid var(--neon-blue);
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+    z-index: 1000;
+}
+
+.sidebar.collapsed {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    border-left: none;
+}
+
+#sidebar-toggle {
+    position: absolute;
+    right: 300px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--neon-blue);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    color: var(--neon-blue);
+    cursor: pointer;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: monospace;
+    font-weight: bold;
+}
+
+
+
+/* Sidebar Collapsed State */
+.sidebar.collapsed {
+    flex: 0 !important;
+    /* Force override */
+    min-width: 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    border-left-width: 0 !important;
+    border-color: transparent !important;
+    overflow: hidden !important;
+}
+
+/* Sidebar Toggle Button (Fixed on Right Edge) */
+.sidebar-toggle-btn {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 60px;
+    background: rgba(0, 243, 255, 0.2);
+    border: 1px solid var(--neon-blue);
+    border-right: none;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    cursor: pointer;
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: -5px 0 15px rgba(0, 243, 255, 0.2);
+    transition: right 0.3s ease, right 0.3s ease;
+}
+
+.sidebar-toggle-btn:hover {
+    background: rgba(0, 243, 255, 0.5);
+    width: 30px;
+}
+
+.sidebar-toggle-btn::after {
+    content: '◀';
+    /* Point Left = Open */
+    color: var(--neon-blue);
+    font-size: 12px;
+}
+
+/* When Sidebar is Open (Not Collapsed) */
+/* We want the button to position to the left of the sidebar? */
+/* Relative to the window right edge. */
+/* Sidebar is flex:1, min-width 200px. */
+/* If we assume the sidebar takes ~300px or more on large screens? */
+/* Fixed position 'right' is hard to sync with Flex width. */
+/* Compromise: Button stays at Right Edge (0). */
+/* If sidebar is open, button overlays the Sidebar content. */
+/* To make it clear it Closes, we change arrow. */
+.sidebar-toggle-btn.is-open {
+    right: 0;
+    background: rgba(255, 0, 85, 0.2);
+    /* Red tint for close */
+    border-color: var(--neon-pink);
+}
+
+.sidebar-toggle-btn.is-open::after {
+    content: '▶';
+    /* Point Right = Close */
+    color: var(--neon-pink);
+}
+
+/* Floating Next Turn Button (Visible when sidebar collapsed) */
+.floating-turn-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 1rem 2rem;
+    background: rgba(0, 10, 20, 0.9);
+    border: 1px solid var(--neon-blue);
+    color: var(--neon-blue);
+    font-family: var(--font-head);
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+    z-index: 2000;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.floating-turn-btn:hover {
+    background: rgba(0, 243, 255, 0.2);
+    box-shadow: 0 0 25px rgba(0, 243, 255, 0.5);
+    transform: scale(1.05);
+}
+
+.floating-turn-btn::after {
+    content: '>>';
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+/* =========================================
+   Sidebar Column (Command/Grave/Exile)
+   ========================================= */
+.side-col {
+    width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 5px;
+    background: rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    flex-shrink: 0;
+
+    /* Scrollbar Logic */
+    scrollbar-width: thin;
+    scrollbar-color: var(--neon-blue) rgba(0, 0, 0, 0.3);
+}
+
+.side-col::-webkit-scrollbar {
+    width: 6px;
+}
+
+.side-col::-webkit-scrollbar-thumb {
+    background: var(--neon-blue);
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+.side-col::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Enforce Aspect Ratio on Zones */
+/* Enforce Aspect Ratio on Zones to match Commander Card (80x112) */
+.zone-slot {
+    width: 80px;
+    height: 112px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+    /* Prevent squashing if list gets long */
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.zone-slot:hover {
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+/* Existing overrides for colors */
+.zone-grave {
+    border-color: rgba(255, 0, 85, 0.4);
+}
+
+.zone-grave:hover {
+    border-color: var(--neon-pink);
+    box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
+}
+
+.zone-exile {
+    border-color: rgba(0, 243, 255, 0.4);
+}
+
+
+/* =========================================
+   Player HUD Action Menu
+   ========================================= */
+.action-menu {
+    border-radius: 4px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    padding: 0.5rem;
+    display: none;
+    /* Controlled by JS toggle */
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 9999;
+    min-width: 140px;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+    backdrop-filter: blur(10px);
+    position: absolute;
+    right: 0;
+    /* Top/Bottom set dynamically by JS */
+
+    /* Scrollbar Logic */
+    max-height: 250px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--neon-blue) rgba(0, 0, 0, 0.3);
+}
+
+.action-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.action-menu::-webkit-scrollbar-thumb {
+    background: var(--neon-blue);
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+.action-menu::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.action-btn {
+    transition: all 0.2s;
+    border-radius: 4px;
+}
+
+.action-btn:hover {
+    background: rgba(0, 243, 255, 0.2) !important;
+    border-color: var(--neon-blue) !important;
+    text-shadow: 0 0 5px var(--neon-blue);
+}
+
+/* =========================================
+   Responsive Grid System
+   ========================================= */
+
+/* Default Desktop Layouts (Copied from App.js logic) */
+.grid-players-2 .player-area {
+    width: 100%;
+    height: 50%;
+}
+
+.grid-players-4 .player-area {
+    width: 50%;
+    height: 50%;
+}
+
+/* 3 Players: 1 Top (Big), 2 Bottom */
+.grid-players-3 .player-area:first-child {
+    width: 100%;
+    height: 50%;
+}
+
+.grid-players-3 .player-area:not(:first-child) {
+    width: 50%;
+    height: 50%;
+}
+
+/* =========================================
+   Mobile / Tablet Responsive Breakpoints
+   ========================================= */
+
+/* Intermediate Breakpoints for smoother scaling (901px - 1200px) */
+@media (max-width: 1200px) and (min-width: 901px) {
+    .sidebar {
+        flex: 0 0 20%;
+        /* 1/5 */
+        max-width: 20%;
+    }
+
+    /* Move button up to avoid Zone overlap */
+    .floating-turn-btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+        bottom: auto;
+        top: 60%;
+        /* Positioned on side center-low */
+        right: 0;
+        border-right: none;
+        border-radius: 4px 0 0 4px;
+    }
+
+    /* Ratio-based Context Menu Size Adjustment */
+    .hud-context-menu {
+        transform: scale(0.95);
+        transform-origin: top left;
+    }
+}
+
+/* Mobile Layout (< 900px) */
+@media (max-width: 900px) {
+
+    /* Collapse sidebar behaviour change */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 30% !important;
+        /* Reduced to 30% per request */
+        max-width: 300px !important;
+        transform: translateX(100%);
+        flex: none !important;
+        z-index: 9000;
+        transform: translateX(0);
+        transition: transform 0.3s ease;
+        border-left: 2px solid var(--neon-pink);
+    }
+
+    /* Mobile Sidebar State Overrides */
+    .sidebar.collapsed {
+        width: 0 !important;
+        transform: translateX(100%);
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    /* Main Board SCROLLS vertically */
+    .main-board {
+        flex: 1 !important;
+        width: 100% !important;
+        overflow-y: auto;
+        height: 100vh;
+        display: block;
+        /* Stack */
+    }
+
+    /* Toggle Button Position */
+    .sidebar-toggle-btn {
+        z-index: 9500;
+        top: 20%;
+    }
+
+    .sidebar-toggle-btn.is-open {
+        background: rgba(0, 0, 0, 0.8);
+    }
+
+    /* Floating Turn Button - High Position */
+    .floating-turn-btn {
+        padding: 0.6rem 1.0rem;
+        font-size: 0.8rem;
+        bottom: auto;
+        top: 60%;
+        right: 0;
+        border-radius: 4px 0 0 4px;
+        border-right: none;
+        background: rgba(0, 10, 20, 0.95);
+        box-shadow: -2px 0 10px rgba(0, 243, 255, 0.3);
+    }
+
+    .player-area {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 350px;
+        flex: none;
+    }
+
+    /* Override Grids */
+    .grid-players-2 .player-area,
+    .grid-players-3 .player-area,
+    .grid-players-4 .player-area {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 350px;
+        border-bottom: 2px solid var(--neon-blue);
+    }
+
+    /* Action Menu Scaling for Mobile */
+    .hud-context-menu {
+        transform: scale(0.9);
+        transform-origin: top left;
+        max-width: 200px;
+    }
+
+    .hud-context-item {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* =========================================
+   Player Header & Responsive Status Bar
+   ========================================= */
+
+.player-header {
+    height: 40px;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    justify-content: flex-start;
+    border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+    position: relative;
+    /* Overflow REMOVED to allow dropdown popup */
+}
+
+.player-header::-webkit-scrollbar {
+    display: none;
+    /* Hide header scrollbar since we scroll p-info now */
+}
+
+.player-area.active-turn .player-header {
+    background: rgba(0, 243, 255, 0.1);
+}
+
+.p-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-right: 1rem;
+
+    /* Internal scrolling */
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    min-width: 0;
+
+    /* Scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: var(--neon-blue) rgba(0, 0, 0, 0.3);
+
+    mask-image: linear-gradient(to right, black 95%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 95%, transparent 100%);
+}
+
+.p-info::-webkit-scrollbar {
+    height: 4px;
+}
+
+.p-info::-webkit-scrollbar-thumb {
+    background: var(--neon-blue);
+    border-radius: 2px;
+}
+
+.p-info::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.p-status {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-shrink: 0;
+    padding-right: 1rem;
+}
+
+.p-actions {
+    position: relative;
+    /* Remove sticky, just flex item */
+    flex-shrink: 0;
+    z-index: 20;
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+/* Updated Header Text Responsive Scaling */
+.p-name-text {
+    font-weight: bold;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+.life-display,
+.hand-display,
+.library-display {
+    font-weight: bold;
+    letter-spacing: 1px;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+/* Responsive Font Sizes for Header */
+@media (max-width: 900px) {
+    .player-header {
+        height: 45px;
+        /* Slightly taller for scrollbar */
+    }
+
+    .p-name-text {
+        font-size: 0.9rem;
+    }
+
+    .p-icon {
+        width: 24px !important;
+        height: 24px !important;
+    }
+
+    .life-display,
+    .hand-display,
+    .library-display {
+        font-size: 0.85rem;
+    }
+
+    .hud-badge {
+        font-size: 0.75rem !important;
+        padding: 1px 4px !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .p-status {
+        gap: 0.5rem;
+    }
+
+    .p-name-text {
+        font-size: 0.85rem;
+    }
+
+    /* Ensure action button stays accessible */
+    .p-actions {
+        background: rgba(0, 0, 0, 0.9);
     }
 }

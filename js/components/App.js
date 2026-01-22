@@ -1,5 +1,8 @@
 import { renderPlayerArea } from './PlayerArea.js';
 
+// Sidebar State (Persisted across renders)
+let isSidebarCollapsed = true; // Default Closed
+
 export function renderApp(container, store) {
     function render() {
         const state = store.getState();
@@ -22,9 +25,9 @@ export function renderApp(container, store) {
             if (!state.gameStarted) {
                 container.innerHTML = `
                     <div class="setup-screen" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; width: 100%;">
-                        <h1 style="color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); font-size: 3rem; text-transform: uppercase; letter-spacing: 2px;">MTG Commander System</h1>
+                        <h1 style="color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); font-size: clamp(1.5rem, 5vw, 3rem); text-transform: uppercase; letter-spacing: 2px; white-space: nowrap;">MTG Commander System</h1>
                         <button id="start-btn" style="padding:1rem 3rem; font-size:1.5rem; cursor:pointer; background: transparent; border: 2px solid var(--neon-blue); color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue);">INITIALIZE SYSTEM</button>
-                        <p style="margin-top: 1rem; color: #888; font-size: 0.8rem;">Note: If buttons don't work, ensure you are running on a local server (CORS).</p>
+
                     </div>
                 `;
 
@@ -43,35 +46,27 @@ export function renderApp(container, store) {
             // Main Game Layout
             const mainBoard = document.createElement('div');
             mainBoard.className = 'main-board';
+            // If sidebar is collapsed, mainBoard should take full width? 
+            // Flex 7 vs Flex 0 means it takes all space naturally if sidebar is present but 0 width.
+
+            // Add player count class for grid layout
+            mainBoard.classList.add(`grid-players-${state.players.length}`);
 
             state.players.forEach((player, index) => {
                 const isActive = player.id === state.turn.activePlayerId;
                 const playerArea = renderPlayerArea(player, store, isActive);
 
-                // Layout Logic
-                const count = state.players.length;
-                if (count === 2) {
-                    playerArea.style.width = '100%';
-                    playerArea.style.height = '50%';
-                } else if (count === 3) {
-                    if (index === 0) {
-                        playerArea.style.width = '100%';
-                        playerArea.style.height = '50%';
-                    } else {
-                        playerArea.style.width = '50%';
-                        playerArea.style.height = '50%';
-                    }
-                } else {
-                    // 4 Players: 2x2 Grid
-                    playerArea.style.width = '50%';
-                    playerArea.style.height = '50%';
-                }
+                // Styles are now handled by CSS .grid-players-N
                 mainBoard.appendChild(playerArea);
             });
 
             // Sidebar
             const sidebar = document.createElement('div');
             sidebar.className = 'sidebar';
+            if (isSidebarCollapsed) {
+                sidebar.classList.add('collapsed');
+            }
+
             sidebar.innerHTML = `
                 <h3>Turn ${state.turn.count}</h3>
                 <p>Active: <strong style="color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue);">${state.players.find(p => p.id === state.turn.activePlayerId)?.name}</strong></p>
@@ -91,66 +86,202 @@ export function renderApp(container, store) {
                 </div>
             `;
 
-            sidebar.querySelector('#next-turn-btn').addEventListener('click', () => {
-                store.dispatch('NEXT_TURN');
-            });
-
-            // Event Listeners for new buttons
-            sidebar.querySelector('#memo-btn').addEventListener('click', () => {
-                import('./MemoModal.js').then(({ MemoModal }) => {
-                    const modal = new MemoModal(store);
-                    document.body.appendChild(modal.render());
+            if (!isSidebarCollapsed) {
+                // Only hook events if visible/rendered? 
+                // Actually if collapsed, innerHTML is still there but hidden.
+                // It's safer to add listeners always unless we optimize render.
+                sidebar.querySelector('#next-turn-btn').addEventListener('click', () => {
+                    store.dispatch('NEXT_TURN');
                 });
-            });
 
-            sidebar.querySelector('#snap-btn').addEventListener('click', () => {
-                if (typeof html2canvas !== 'undefined') {
-                    const target = document.querySelector('.main-board') || document.body;
-
-                    html2canvas(target, {
-                        backgroundColor: '#1a1a1a', // Match theme
-                        useCORS: true,
-                        logging: false
-                    }).then(canvas => {
-                        const link = document.createElement('a');
-                        link.download = `mtg-board-snap-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
-                        link.href = canvas.toDataURL();
-                        link.click();
-                    }).catch(err => {
-                        console.error('Snapshot failed:', err);
-                        alert('Snapshot failed. See console.');
+                // Event Listeners for new buttons
+                sidebar.querySelector('#memo-btn').addEventListener('click', () => {
+                    import('./MemoModal.js').then(({ MemoModal }) => {
+                        const modal = new MemoModal(store);
+                        document.body.appendChild(modal.render());
                     });
-                } else {
-                    alert('Snapshot library not loaded yet.');
-                }
-            });
+                });
 
-            sidebar.querySelector('#undo-btn').addEventListener('click', () => {
-                if (confirm('Undo last action?')) {
-                    store.dispatch('UNDO');
-                }
-            });
+                sidebar.querySelector('#snap-btn').addEventListener('click', () => {
+                    if (typeof html2canvas !== 'undefined') {
+                        if (!confirm('Take a snapshot of the current board?')) return;
 
-            sidebar.querySelector('#in-game-restart-btn').addEventListener('click', () => {
-                if (confirm('Are you sure you want to restart the game? Current progress will be lost.')) {
-                    // Transition Animation
-                    const overlay = document.createElement('div');
-                    overlay.className = 'transition-overlay';
-                    document.body.appendChild(overlay);
+                        const target = document.querySelector('.main-board') || document.body;
 
-                    // Optional: Glitch out the board
-                    const board = document.querySelector('.main-board');
-                    if (board) board.classList.add('modal-exit-anim');
+                        html2canvas(target, {
+                            backgroundColor: '#1a1a1a', // Match theme
+                            useCORS: true,
+                            logging: false
+                        }).then(canvas => {
+                            const link = document.createElement('a');
+                            link.download = `mtg-board-snap-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+                            link.href = canvas.toDataURL();
+                            link.click();
+                        }).catch(err => {
+                            console.error('Snapshot failed:', err);
+                            alert('Snapshot failed. See console.');
+                        });
+                    } else {
+                        alert('Snapshot library not loaded yet.');
+                    }
+                });
 
-                    setTimeout(() => {
-                        store.dispatch('RESTART_GAME');
-                        setTimeout(() => overlay.remove(), 500);
-                    }, 800);
-                }
-            });
+                sidebar.querySelector('#undo-btn').addEventListener('click', () => {
+                    if (confirm('Undo last action?')) {
+                        store.dispatch('UNDO');
+                    }
+                });
+
+                sidebar.querySelector('#save-log-btn').addEventListener('click', () => {
+                    if (confirm('Download game log?')) {
+                        // 1. Get logs in chronological order (Oldest -> Newest)
+                        const rawLogs = store.getState().logs.slice().reverse();
+                        const players = store.getState().players;
+                        const startingLife = store.getState().settings?.startingLife || 40;
+
+                        // 2. Prepare Tracking State
+                        let currentTurn = 0;
+                        let activePlayerName = "";
+
+                        // Maps
+                        const lifeMap = {};
+                        players.forEach(p => lifeMap[p.name] = startingLife);
+
+                        // NEW: Track Commander Damage Running Totals to deduce Life Loss
+                        // { VictimName: { SourceName: TotalDamage } }
+                        const cmdDmgTotals = {};
+
+                        // 3. Prepare CSV Header
+                        // Cols: Timestamp, Turn, Active Player, Life, Message
+                        // BOM included
+                        let csvContent = "\uFEFFTimestamp,Turn,Active Player,Life,Message\n";
+
+                        // 4. Process logs
+                        rawLogs.forEach(entryStr => {
+                            const match = entryStr.match(/^\[(.*?)\] (.*)$/);
+                            if (!match) return; // Skip invalid format
+
+                            const time = match[1];
+                            let msg = match[2];
+
+                            // --- State Tracking Logic --- //
+
+                            // A. Check for Turn Start
+                            const turnMatch = msg.match(/^Turn (\d+): (.*?)'s turn/);
+                            if (turnMatch) {
+                                currentTurn = turnMatch[1];
+                                activePlayerName = turnMatch[2];
+
+                                // Clean up message
+                                const fullTurnMatch = msg.match(/^Turn (\d+): (.*)$/);
+                                if (fullTurnMatch) msg = fullTurnMatch[2];
+                            }
+
+                            // B. Check for Life Change
+                            const lifeMatch = msg.match(/^(.*?)'s life changed.*?Current: (-?\d+)/);
+                            if (lifeMatch) {
+                                const pName = lifeMatch[1];
+                                const newLife = parseInt(lifeMatch[2]);
+                                lifeMap[pName] = newLife;
+                            }
+
+                            // C. Check for Commander Damage (New Format)
+                            // (CMDdmg：Attacker｛Source}→Victim：Total)
+                            const cmdRegex = /\(CMDdmg：.*?｛(.*?)\}→(.*?)：(\d+)\)/;
+                            // Group 1: Source, 2: Victim, 3: Total
+                            const cmdMatch = msg.match(cmdRegex);
+                            if (cmdMatch) {
+                                const sourceName = cmdMatch[1];
+                                const victimName = cmdMatch[2];
+                                const newTotal = parseInt(cmdMatch[3]);
+
+                                // Initialize tracking if needed
+                                if (!cmdDmgTotals[victimName]) cmdDmgTotals[victimName] = {};
+                                const prevTotal = cmdDmgTotals[victimName][sourceName] || 0;
+
+                                const damageAmount = newTotal - prevTotal;
+
+                                // Update total
+                                cmdDmgTotals[victimName][sourceName] = newTotal;
+
+                                // Update Life (Deduce loss)
+                                if (lifeMap[victimName] !== undefined) {
+                                    lifeMap[victimName] -= damageAmount;
+                                }
+                            }
+
+                            // D. Check for Elimination (Life 0)
+                            const elimMatch = msg.match(/^(.*?) has been eliminated/);
+                            if (elimMatch) {
+                                lifeMap[elimMatch[1]] = 0;
+                            }
+
+                            // --- Row Construction ---
+                            let currentLife = "";
+                            if (activePlayerName && lifeMap[activePlayerName] !== undefined) {
+                                currentLife = lifeMap[activePlayerName];
+                            }
+
+                            // Escape quotes
+                            msg = msg.replace(/"/g, '""');
+
+                            // Add Row
+                            csvContent += `"${time}","${currentTurn}","${activePlayerName}","${currentLife}","${msg}"\n`;
+                        });
+
+                        // 5. Trigger Download
+                        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `mtg-game-log-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
+                        a.click();
+                    }
+                });
+
+                sidebar.querySelector('#in-game-restart-btn').addEventListener('click', () => {
+                    if (confirm('Are you sure you want to restart the game? Current progress will be lost.')) {
+                        // Transition Animation
+                        const overlay = document.createElement('div');
+                        overlay.className = 'transition-overlay';
+                        document.body.appendChild(overlay);
+
+                        // Optional: Glitch out the board
+                        const board = document.querySelector('.main-board');
+                        if (board) board.classList.add('modal-exit-anim');
+
+                        setTimeout(() => {
+                            store.dispatch('RESTART_GAME');
+                            setTimeout(() => overlay.remove(), 500);
+                        }, 800);
+                    }
+                });
+            }
 
             container.appendChild(mainBoard);
             container.appendChild(sidebar);
+
+            // Sidebar Toggle Button
+            const toggleBtn = document.createElement('div');
+            toggleBtn.className = 'sidebar-toggle-btn';
+            if (!isSidebarCollapsed) toggleBtn.classList.add('is-open');
+            toggleBtn.onclick = () => {
+                isSidebarCollapsed = !isSidebarCollapsed;
+                render();
+            };
+            container.appendChild(toggleBtn);
+
+            // Floating Next Turn Button (Only when sidebar collapsed)
+            if (isSidebarCollapsed) {
+                const floatTurnBtn = document.createElement('div');
+                floatTurnBtn.className = 'floating-turn-btn';
+                floatTurnBtn.innerText = 'NEXT PHASE';
+                floatTurnBtn.onclick = () => {
+                    store.dispatch('NEXT_TURN');
+                };
+                container.appendChild(floatTurnBtn);
+            }
+
         } catch (e) {
             console.error('Render Loop Error:', e);
             alert('A Critical System Error occurred during render. Please check console for details.\n\n' + e.message);

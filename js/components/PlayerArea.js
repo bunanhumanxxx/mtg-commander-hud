@@ -61,7 +61,6 @@ export function renderPlayerArea(player, store, isActive) {
     // Header
     const header = document.createElement('div');
     header.className = 'player-header';
-    header.style.cssText = `height: 40px; background: rgba(0,0,0,0.4); display: flex; align-items: center; padding: 0 0.5rem; justify-content: space-between; ${isActive ? 'background: rgba(0, 243, 255, 0.1);' : ''}`;
 
     // Commander Damage Buttons Logic
     const allPlayers = store.getState().players;
@@ -85,6 +84,7 @@ export function renderPlayerArea(player, store, isActive) {
             });
 
             const hasLethal = maxDmg >= 21;
+            const btn = document.createElement('button');
             btn.className = 'hud-badge';
             btn.innerHTML = `[ ${op.name}: Partners ]`;
             btn.title = `Commander Damage from ${op.name} (Partners)`;
@@ -126,7 +126,7 @@ export function renderPlayerArea(player, store, isActive) {
 
                 btn.onclick = () => {
                     import('./StatusModal.js').then(({ StatusModal }) => {
-                        const modal = new StatusModal(store, player.id, 'commanderDamage', dmg, cmd.id, `${cmd.name} (${op.name})`);
+                        const modal = new StatusModal(store, player.id, 'commanderDamage', dmg, cmd.id, `${cmd.name}`);
                         document.body.appendChild(modal.render());
                     });
                 };
@@ -264,27 +264,18 @@ export function renderPlayerArea(player, store, isActive) {
     });
 
     header.innerHTML = `
-        <div class="p-info" style="display:flex; align-items:center;">
-            <img src="${player.icon}" style="
-                height: 32px; 
-                width: 32px; 
-                object-fit: contain; 
-                margin-right: 0.8rem; 
-                mix-blend-mode: screen; 
-                -webkit-mask-image: radial-gradient(closest-side, black 60%, transparent 100%);
-                mask-image: radial-gradient(closest-side, black 60%, transparent 100%);
-                filter: contrast(1.2) brightness(1.1);
-            ">
-            <span class="glitch-text" data-text="${player.name}" style="font-weight: bold; margin-right: 1rem; ${isActive ? 'color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue);' : ''}">${player.name} ${player.eliminated ? '(DEAD)' : (isActive ? '(Active)' : '')}</span>
-            <span class="p-status" style="display:flex; gap:1rem; align-items:center;">
-                <span class="life-display hud-text-glow" style="cursor: pointer; color: var(--neon-pink); font-weight:bold; text-shadow: 0 0 5px var(--neon-pink); letter-spacing: 1px;">HP: ${player.life}</span>
-                <span class="hand-display hud-text-glow" style="cursor: pointer; color: var(--neon-blue); font-weight:bold; letter-spacing: 1px;">HAND: ${player.handCount}</span>
-                <span class="library-display hud-text-glow" style="cursor: pointer; color: #88ff88; font-weight:bold; letter-spacing: 1px;">DECK: ${player.libraryCount || 0}</span>
+        <div class="p-info">
+            <img src="${player.icon}" class="p-icon" style="height: 32px; width: 32px; object-fit: contain; margin-right: 0.5rem; filter: contrast(1.2) brightness(1.1);">
+            <span class="glitch-text p-name-text" data-text="${player.name}" style="${isActive ? 'color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue);' : ''}">${player.name} ${player.eliminated ? '(DEAD)' : (isActive ? '(Active)' : '')}</span>
+            <span class="p-status">
+                <span class="life-display hud-text-glow" style="cursor: pointer; color: var(--neon-pink); text-shadow: 0 0 5px var(--neon-pink);">HP: ${player.life}</span>
+                <span class="hand-display hud-text-glow" style="cursor: pointer; color: var(--neon-blue);">HAND: ${player.handCount}</span>
+                <span class="library-display hud-text-glow" style="cursor: pointer; color: #88ff88;">DECK: ${player.libraryCount || 0}</span>
             </span>
         </div>
-        <div class="p-actions" style="position: relative;">
+        <div class="p-actions">
            <button class="action-btn" style="padding: 2px 8px; font-size: 0.8rem; cursor: pointer; border: 1px solid var(--border-color); background: rgba(0,0,0,0.5); color: var(--text-color);">Action ▼</button>
-           <div class="action-menu" style="display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--glass-border); padding: 0.5rem; flex-direction: column; gap: 0.5rem; z-index: 100; min-width: 120px; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); backdrop-filter: blur(10px);">
+           <div class="action-menu">
                <button class="select-mode-btn" style="padding: 6px; font-size: 0.8rem; width: 100%; text-align: left; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--border-color); cursor: pointer;">Select</button>
                <button class="filter-select-btn" style="padding: 6px; font-size: 0.8rem; width: 100%; text-align: left; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--border-color); cursor: pointer;">Filter</button>
                 <button class="add-card-btn" style="padding: 6px; font-size: 0.8rem; width: 100%; text-align: left; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--border-color); cursor: pointer;">+ Card</button>
@@ -299,15 +290,39 @@ export function renderPlayerArea(player, store, isActive) {
         </div>
     `;
 
-    // Action Menu Toggle
+    // Action Menu Toggle with Dynamic Positioning
     const actionBtn = header.querySelector('.action-btn');
     const actionMenu = header.querySelector('.action-menu');
     actionBtn.onclick = (e) => {
         e.stopPropagation();
         const isHidden = actionMenu.style.display === 'none';
+
         // Close others
         document.querySelectorAll('.action-menu').forEach(el => el.style.display = 'none');
-        actionMenu.style.display = isHidden ? 'flex' : 'none';
+
+        if (isHidden) {
+            actionMenu.style.display = 'flex';
+
+            // Dynamic Positioning Logic
+            const rect = actionBtn.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+
+            // If button is in the lower 40% of the screen, open UP
+            if (rect.bottom > viewportHeight * 0.6) {
+                actionMenu.style.top = 'auto';
+                actionMenu.style.bottom = '100%';
+                actionMenu.style.marginBottom = '5px'; // Adjust spacing
+                actionMenu.style.marginTop = '0';
+            } else {
+                // Otherwise open DOWN (Default)
+                actionMenu.style.top = '100%';
+                actionMenu.style.bottom = 'auto';
+                actionMenu.style.marginBottom = '0';
+                actionMenu.style.marginTop = '5px';
+            }
+        } else {
+            actionMenu.style.display = 'none';
+        }
     };
 
     // Game Stats Event
@@ -474,7 +489,6 @@ export function renderPlayerArea(player, store, isActive) {
     // --- RIGHT COLUMN: SIDEBAR (Commander & Used) ---
     const sideCol = document.createElement('div');
     sideCol.className = 'side-col';
-    sideCol.style.cssText = 'width: 120px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 10px 5px; background: rgba(0,0,0,0.2); overflow-y: auto;';
 
     // Commander Zone
     const commanderZone = renderCommanderZone(player, store);
