@@ -6,44 +6,125 @@ let isSidebarCollapsed = true; // Default Closed
 export function renderApp(container, store) {
     function render() {
         const state = store.getState();
-        container.innerHTML = ''; // Clear current
+        // container.innerHTML = ''; // MOVED: Now handled per-mode to prevent flashing in Life Counter mode
 
         try {
             // Check for Winner
             if (state.winner) {
-                import('./GameOverModal.js?v=' + Date.now()).then(({ GameOverModal }) => {
-                    if (!document.querySelector('.game-over-modal-overlay')) {
-                        const modal = new GameOverModal(store, state.winner);
-                        container.appendChild(modal.render());
-                    }
-                });
+                if (state.settings.gameMode === 'life_counter') {
+                    import('./LifeCounterVictoryModal.js?v=' + Date.now()).then(({ LifeCounterVictoryModal }) => {
+                        if (!document.querySelector('.game-over-modal-overlay')) {
+                            const modal = new LifeCounterVictoryModal(store, state.winner);
+                            container.appendChild(modal.render());
+                        }
+                    });
+                } else {
+                    import('./GameOverModal.js?v=' + Date.now()).then(({ GameOverModal }) => {
+                        if (!document.querySelector('.game-over-modal-overlay')) {
+                            const modal = new GameOverModal(store, state.winner);
+                            container.appendChild(modal.render());
+                        }
+                    });
+                }
             } else {
                 const existing = document.querySelector('.game-over-modal-overlay');
                 if (existing) existing.remove();
             }
 
             if (!state.gameStarted) {
-                container.innerHTML = `
+                // START SCREEN with Mode Selection
+                container.innerHTML = '';
+                container.innerHTML += `
                     <div class="setup-screen" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; width: 100%;">
-                        <h1 style="color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); font-size: clamp(1.5rem, 5vw, 3rem); text-transform: uppercase; letter-spacing: 2px; white-space: nowrap;">MTG Commander System</h1>
-                        <button id="start-btn" style="padding:1rem 3rem; font-size:1.5rem; cursor:pointer; background: transparent; border: 2px solid var(--neon-blue); color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue);">INITIALIZE SYSTEM</button>
+                        <h1 style="color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); font-size: clamp(1.5rem, 5vw, 3rem); text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; margin-bottom: 3rem;">MTG Commander System</h1>
+                        
+                        <div style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;">
+                            <button id="start-full-btn" style="
+                                padding:1.5rem 3rem; font-size:1.2rem; cursor:pointer; 
+                                background: rgba(0, 243, 255, 0.1); border: 2px solid var(--neon-blue); color: var(--neon-blue); 
+                                box-shadow: 0 0 15px var(--neon-blue); border-radius: 8px; text-transform: uppercase; font-weight: bold;
+                                transition: all 0.3s;
+                            ">
+                                FULL SYSTEM MODE
+                                <div style="font-size: 0.8rem; font-weight: normal; margin-top: 5px; opacity: 0.8;">Board & Life Management</div>
+                            </button>
 
+                            <button id="start-life-btn" style="
+                                padding:1.5rem 3rem; font-size:1.2rem; cursor:pointer; 
+                                background: rgba(255, 0, 85, 0.1); border: 2px solid var(--neon-pink); color: var(--neon-pink); 
+                                box-shadow: 0 0 15px var(--neon-pink); border-radius: 8px; text-transform: uppercase; font-weight: bold;
+                                transition: all 0.3s;
+                            ">
+                                LIFE COUNTER MODE
+                                <div style="font-size: 0.8rem; font-weight: normal; margin-top: 5px; opacity: 0.8;">Life & Cmd Damage Only</div>
+                            </button>
+                        </div>
                     </div>
                 `;
 
-                document.getElementById('start-btn').addEventListener('click', () => {
+                // Hover Effects
+                const addHover = (btnId, color) => {
+                    const btn = document.getElementById(btnId);
+                    btn.onmouseover = () => {
+                        btn.style.background = color === 'blue' ? 'rgba(0, 243, 255, 0.3)' : 'rgba(255, 0, 85, 0.3)';
+                        btn.style.transform = 'scale(1.05)';
+                    };
+                    btn.onmouseout = () => {
+                        btn.style.background = color === 'blue' ? 'rgba(0, 243, 255, 0.1)' : 'rgba(255, 0, 85, 0.1)';
+                        btn.style.transform = 'scale(1)';
+                    };
+                };
+                addHover('start-full-btn', 'blue');
+                addHover('start-life-btn', 'red');
+
+                // Full System Setup
+                document.getElementById('start-full-btn').addEventListener('click', () => {
                     import('./Modals.js?v=' + Date.now()).then(({ SetupModal }) => {
                         const modal = new SetupModal(store);
                         container.appendChild(modal.render());
-                    }).catch(err => {
-                        console.error('Failed to load Modals:', err);
-                        alert('Error loading application components. If you are opening this file directly, please use a local server (e.g., VS Code Live Server, python -m http.server).');
+                    });
+                });
+
+                // Life Counter Setup
+                document.getElementById('start-life-btn').addEventListener('click', () => {
+                    import('./LifeCounterSetupModal.js?v=' + Date.now()).then(({ LifeCounterSetupModal }) => {
+                        const modal = new LifeCounterSetupModal(store);
+                        container.appendChild(modal.render());
                     });
                 });
                 return;
             }
 
-            // Main Game Layout
+            // --- RENDER GAME (based on Mode) ---
+            if (state.settings.gameMode === 'life_counter') {
+                import('./LifeCounterApp.js?v=' + Date.now()).then(({ LifeCounterApp }) => {
+                    // Check if we already have an active instance
+                    if (!window.lifeCounterInstance) {
+                        // First mount
+                        window.lifeCounterInstance = new LifeCounterApp(store);
+                        window.lifeCounterInstance.mount(container);
+                    } else {
+                        // Update existing (No Flash!)
+                        // Ensure container is still valid (e.g. if we switched pages)
+                        if (window.lifeCounterInstance.container !== container) {
+                            window.lifeCounterInstance.mount(container);
+                        } else {
+                            window.lifeCounterInstance.update(state);
+                        }
+                    }
+                });
+                return;
+            } else {
+                // Cleanup Life Counter instance if we switch away
+                if (window.lifeCounterInstance) {
+                    window.lifeCounterInstance = null;
+                }
+            }
+
+            // --- FULL SYSTEM MODE (Standard) ---
+            // Clear container strictly for Full System Mode re-renders
+            container.innerHTML = '';
+
             const mainBoard = document.createElement('div');
             mainBoard.className = 'main-board';
             // If sidebar is collapsed, mainBoard should take full width? 

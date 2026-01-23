@@ -14,7 +14,8 @@ export class Store {
             gameStarted: false,
             settings: {
                 playerCount: 4,
-                startingLife: 40
+                startingLife: 40,
+                gameMode: 'full' // 'full' or 'life_counter'
             },
             ui: {
                 selectionMode: false,
@@ -483,6 +484,13 @@ export class Store {
         try {
             // Options default
             const randomize = options?.randomizeTurnOrder !== false; // Default true
+
+            // Set Game Mode
+            if (options?.gameMode) {
+                this.state.settings.gameMode = options.gameMode;
+            } else {
+                this.state.settings.gameMode = 'full';
+            }
 
             // Sci-Fi / Cyberpunk Icons
             const ICONS = [
@@ -973,7 +981,9 @@ export class Store {
             logs: [],
             gameStarted: false,
             winner: null,
-            settings: this.state.settings,
+            settings: {
+                ...this.state.settings, // Preserve mode and other settings
+            },
             ui: {
                 selectionMode: false,
                 selectedIds: []
