@@ -18,7 +18,7 @@ export class ZoneSelectModal {
         const showCommand = this.options.isCommander;
 
         this.element.innerHTML = `
-            <div class="zone-modal-content" style="background: #2a2a2a; padding: 2rem; border-radius: 8px; width: 300px; display: flex; flex-direction: column; gap: 1rem; color: white; border: 1px solid #444;">
+            <div class="zone-modal-content" style="background: #2a2a2a; padding: 2rem; border-radius: 8px; width: 300px; display: flex; flex-direction: column; gap: 1rem; color: white; border: 1px solid #444; max-height: 85vh; overflow-y: auto;">
                 <h3 style="margin: 0; text-align: center;">Select Destination</h3>
                 <p style="text-align: center; color: #ccc; font-size: 0.9rem;">
                     Move <strong style="color: gold;">${this.cardName}</strong> to:

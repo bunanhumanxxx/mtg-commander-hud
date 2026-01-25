@@ -133,9 +133,18 @@ export function renderApp(container, store) {
             // Add player count class for grid layout
             mainBoard.classList.add(`grid-players-${state.players.length}`);
 
+            const focusedId = state.ui.focusedPlayerId;
+            if (focusedId) {
+                mainBoard.classList.add('has-focused-player');
+            }
+
             state.players.forEach((player, index) => {
                 const isActive = player.id === state.turn.activePlayerId;
                 const playerArea = renderPlayerArea(player, store, isActive);
+
+                if (focusedId === player.id) {
+                    playerArea.classList.add('focused');
+                }
 
                 // Styles are now handled by CSS .grid-players-N
                 mainBoard.appendChild(playerArea);

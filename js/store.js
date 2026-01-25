@@ -19,7 +19,8 @@ export class Store {
             },
             ui: {
                 selectionMode: false,
-                selectedIds: []
+                selectedIds: [],
+                focusedPlayerId: null
             }
         };
         this.subscribers = [];
@@ -140,6 +141,9 @@ export class Store {
                 break;
             case 'CHANGE_CONTROL':
                 this._changeControl(payload);
+                break;
+            case 'TOGGLE_PLAYER_FOCUS':
+                this._togglePlayerFocus(payload);
                 break;
             // Add more actions as needed
         }
@@ -1013,6 +1017,14 @@ export class Store {
             const newControllerName = state.players.find(p => p.id === newControllerId).name;
             const cardName = card.name;
             this._log(`${state.players.find(p => p.id === currentControllerId).name} gave control of {${cardName}} to ${newControllerName}.`);
+        }
+    }
+
+    _togglePlayerFocus({ playerId }) {
+        if (this.state.ui.focusedPlayerId === playerId) {
+            this.state.ui.focusedPlayerId = null; // Unfocus
+        } else {
+            this.state.ui.focusedPlayerId = playerId; // Focus new
         }
     }
 }

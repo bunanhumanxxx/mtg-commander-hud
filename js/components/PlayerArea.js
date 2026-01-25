@@ -266,7 +266,10 @@ export function renderPlayerArea(player, store, isActive) {
     header.innerHTML = `
         <div class="p-info">
             <img src="${player.icon}" class="p-icon" style="height: 32px; width: 32px; object-fit: contain; margin-right: 0.5rem; filter: contrast(1.2) brightness(1.1);">
-            <span class="glitch-text p-name-text" data-text="${player.name}" style="${isActive ? 'color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue);' : ''}">${player.name} ${player.eliminated ? '(DEAD)' : (isActive ? '(Active)' : '')}</span>
+            <span class="glitch-text p-name-text" data-text="${player.name}" style="
+                ${isActive ? 'color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue);' : ''}
+                cursor: pointer;
+            " title="Click to Focus/Unfocus Field">${player.name} ${player.eliminated ? '(DEAD)' : (isActive ? '(Active)' : '')}</span>
             <span class="p-status">
                 <span class="life-display hud-text-glow" style="cursor: pointer; color: var(--neon-pink); text-shadow: 0 0 5px var(--neon-pink);">HP: ${player.life}</span>
                 <span class="hand-display hud-text-glow" style="cursor: pointer; color: var(--neon-blue);">HAND: ${player.handCount}</span>
@@ -363,6 +366,12 @@ export function renderPlayerArea(player, store, isActive) {
     };
 
     header.querySelector('.p-status').appendChild(cmdContainer);
+
+    // Player Name Click (Focus Toggle)
+    header.querySelector('.p-name-text').addEventListener('click', (e) => {
+        e.stopPropagation();
+        store.dispatch('TOGGLE_PLAYER_FOCUS', { playerId: player.id });
+    });
 
     // Life Click Event
     header.querySelector('.life-display').addEventListener('click', () => {

@@ -1567,6 +1567,30 @@ button:hover {
 }
 
 /* =========================================
+   Player Focus Mode (Full Screen One Player)
+   ========================================= */
+.main-board.has-focused-player .player-area {
+    display: none !important;
+    /* Hide non-focused */
+}
+
+.main-board.has-focused-player .player-area.focused {
+    display: flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    /* Remove separation borders if any */
+}
+
+/* Ensure focus overrides mobile layouts too */
+@media (max-width: 900px) {
+    .main-board.has-focused-player .player-area.focused {
+        height: 100vh !important;
+        /* Full height on mobile */
+    }
+}
+
+/* =========================================
    Responsive Grid System
    ========================================= */
 

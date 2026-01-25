@@ -29,6 +29,8 @@ export class TokenModal {
             flex-direction: column; 
             gap: 1rem; 
             color: white;
+            max-height: 85vh;
+            overflow-y: auto;
         `;
 
         content.innerHTML = `
