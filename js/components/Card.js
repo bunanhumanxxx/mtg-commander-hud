@@ -248,6 +248,17 @@ export function renderCard(card, store, playerId) {
 
     // Context Menu on Right Click
     cardDiv.addEventListener('contextmenu', (e) => {
+        // Custom menu for Deck Builder
+        if (store.getState().settings.gameMode === 'deck_builder') {
+            e.preventDefault();
+            e.stopPropagation();
+            import('./DeckBuilderContextMenu.js?v=' + Date.now()).then(({ DeckBuilderContextMenu }) => {
+                const menu = new DeckBuilderContextMenu(store);
+                menu.show(e.clientX, e.clientY, card.instanceId, playerId);
+            });
+            return;
+        }
+
         e.preventDefault();
         e.stopPropagation(); // Prevent bubbling
         import('./ContextMenu.js?v=' + Date.now()).then(({ ContextMenu }) => {

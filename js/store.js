@@ -91,6 +91,9 @@ export class Store {
             case 'CLONE_CARD':
                 this._cloneCard(payload);
                 break;
+            case 'UPDATE_CARD_PROPERTY':
+                this._updateCardProperty(payload);
+                break;
             case 'NEXT_TURN':
                 this._nextTurn();
                 break;
@@ -144,6 +147,27 @@ export class Store {
                 break;
             case 'TOGGLE_PLAYER_FOCUS':
                 this._togglePlayerFocus(payload);
+                break;
+            case 'LOAD_DECK_DATA':
+                this._loadDeckData(payload);
+                break;
+            case 'ADD_CARD_TO_DECK':
+                this._addCardToDeck(payload);
+                break;
+            case 'TEST_INIT_HAND':
+                this._testInitHand(payload);
+                break;
+            case 'TEST_MULLIGAN':
+                this._testMulligan(payload);
+                break;
+            case 'TEST_DRAW':
+                this._testDraw(payload);
+                break;
+            case 'TEST_SEARCH':
+                this._testSearch(payload);
+                break;
+            case 'TEST_USE':
+                this._testUse(payload);
                 break;
             // Add more actions as needed
         }
@@ -420,6 +444,7 @@ export class Store {
             if (destination === 'library') {
                 const player = this.state.players.find(p => p.id === playerId);
                 player.libraryCount++;
+                if (zone.library) zone.library.push(card); // Actually add to deck list
                 this._log(`${player.name} moved {${card.name}} to Library (Bottom). (Deck: ${player.libraryCount})`);
             } else {
                 // Ownership Logic: If leaving battlefield (and not to battlefield), return to OWNER's zone
@@ -586,7 +611,8 @@ export class Store {
                     grave: [],
                     exile: [],
                     command: commandZoneCards,
-                    hand: []
+                    hand: [],
+                    sideboard: [] // New zone for Deck Builder Candidates
                 };
             });
 
@@ -786,6 +812,31 @@ export class Store {
             // Keep image and other data
             zone.battlefield.push(clone);
             this._log(`${this.state.players.find(p => p.id === playerId).name} created a copy of {${card.name}}.`);
+        }
+    }
+
+    _updateCardProperty({ playerId, cardId, property, value, zoneName }) {
+        // Helper to update specific prop
+        const zone = this.state.zones[playerId];
+        if (!zone) return;
+
+        // Search specified zone or fallback to common ones
+        const targetZone = zoneName ? zone[zoneName] : null;
+        let card;
+
+        if (targetZone) {
+            card = targetZone.find(c => c.instanceId === cardId);
+        } else {
+            // Default search order: Battlefield -> Hand -> Library -> Grave
+            card = zone.battlefield.find(c => c.instanceId === cardId) ||
+                zone.hand.find(c => c.instanceId === cardId) ||
+                (zone.library || []).find(c => c.instanceId === cardId) ||
+                zone.grave.find(c => c.instanceId === cardId);
+        }
+
+        if (card) {
+            card[property] = value;
+            // No Log for property updates usually to avoid spam, unless requested?
         }
     }
 
@@ -1025,6 +1076,178 @@ export class Store {
             this.state.ui.focusedPlayerId = null; // Unfocus
         } else {
             this.state.ui.focusedPlayerId = playerId; // Focus new
+        }
+    }
+
+    _loadDeckData({ playerId, library, sideboard, commanders }) {
+        // Ensure library zone exists
+        if (!this.state.zones[playerId].library) {
+            this.state.zones[playerId].library = [];
+        }
+
+        // Commanders need to be added to library for Deck Builder View
+        // (Even though they are technically in 'command' zone for valid game state, Builder UI relies on library list)
+        // We add them first.
+        const cmdCards = (commanders || []).map(c => ({
+            ...c,
+            id: c.id || generateId(),
+            instanceId: generateId(),
+            tapped: false,
+            isCommander: true // Ensure flag
+        }));
+
+        const libCards = (library || []).map(c => ({
+            ...c,
+            id: c.id || generateId(),
+            instanceId: generateId(),
+            tapped: false,
+            isCommander: false
+        }));
+
+        this.state.zones[playerId].library = [...cmdCards, ...libCards];
+
+        // Also populate sideboard if needed
+        if (sideboard) {
+            this.state.zones[playerId].sideboard = sideboard.map(c => ({
+                ...c,
+                id: c.id || generateId(),
+                instanceId: generateId(),
+                tapped: false
+            }));
+        }
+
+        // Update count
+        const player = this.state.players.find(p => p.id === playerId);
+        if (player) {
+            player.libraryCount = this.state.zones[playerId].library.length;
+        }
+
+        this._log('Deck loaded.');
+    }
+
+    _addCardToDeck({ playerId, card }) {
+        if (!this.state.zones[playerId].library) {
+            this.state.zones[playerId].library = [];
+        }
+        const newCard = {
+            ...card,
+            id: card.id || generateId(),
+            instanceId: generateId(),
+            filters: card.filters || [] // Keep filters if any
+        };
+        this.state.zones[playerId].library.push(newCard);
+
+        // Update count
+        const player = this.state.players.find(p => p.id === playerId);
+        if (player) {
+            player.libraryCount = this.state.zones[playerId].library.length;
+        }
+    }
+
+    // --- Hand Simulator Actions ---
+
+    // --- Hand Simulator Actions (Sandbox) ---
+
+    _testInitHand({ playerId }) {
+        const zone = this.state.zones[playerId];
+        const mainLibrary = zone.library || [];
+
+        // 1. Clone Main Library (Exclude Commanders, though in Builder they are mixed? 
+        // We flagged them isCommander=true in LOAD_DECK_DATA.
+        // We filter them out for the Sim Deck.)
+
+        // Deep copy to ensure sandbox doesn't mutate main instances
+        const simDeck = mainLibrary
+            .filter(c => !c.isCommander)
+            .map(c => ({
+                ...c,
+                instanceId: generateId(), // New Instance IDs for sim
+                tapped: false,
+                counters: {}
+            }));
+
+        // 2. Initialize Sim Zones
+        zone.simLibrary = shuffle(simDeck);
+        zone.simHand = [];
+        zone.simGrave = [];
+
+        // 3. Draw 7
+        for (let i = 0; i < 7; i++) {
+            const card = zone.simLibrary.pop();
+            if (card) zone.simHand.push(card);
+        }
+
+        this._log(`${this.state.players.find(p => p.id === playerId).name} started Hand Simulation (Sandbox).`);
+        this.notify();
+    }
+
+    _testMulligan({ playerId }) {
+        const zone = this.state.zones[playerId];
+        if (!zone.simHand || !zone.simLibrary) return;
+
+        // 1. Hand -> Bottom of Library
+        // In our stack logic, Top is End (pop). Bottom is Start (unshift).
+        const hand = [...zone.simHand];
+        zone.simHand = [];
+
+        // "Move all to bottom"
+        zone.simLibrary.unshift(...hand);
+
+        // 2. Draw 7
+        for (let i = 0; i < 7; i++) {
+            const card = zone.simLibrary.pop();
+            if (card) zone.simHand.push(card);
+        }
+
+        this._log(`Sim: Mulligan (Hand -> Bottom, Draw 7).`);
+    }
+
+    _testDraw({ playerId, count = 1 }) {
+        const zone = this.state.zones[playerId];
+        if (!zone.simHand || !zone.simLibrary) return;
+
+        let actual = 0;
+        for (let i = 0; i < count; i++) {
+            const card = zone.simLibrary.pop();
+            if (card) {
+                zone.simHand.push(card);
+                actual++;
+            }
+        }
+        this._log(`Sim: Drew ${actual} card(s).`);
+    }
+
+    _testSearch({ playerId, cardId }) {
+        const zone = this.state.zones[playerId];
+        if (!zone.simHand || !zone.simLibrary) return;
+
+        // Find card in Library
+        const idx = zone.simLibrary.findIndex(c => c.instanceId === cardId);
+        if (idx > -1) {
+            const card = zone.simLibrary[idx];
+            zone.simLibrary.splice(idx, 1);
+            zone.simHand.push(card);
+
+            // Shuffle after search
+            zone.simLibrary = shuffle(zone.simLibrary);
+
+            this._log(`Sim: Searched {${card.name}} and shuffled.`);
+        }
+    }
+
+    _testUse({ playerId, cardId }) {
+        const zone = this.state.zones[playerId];
+        if (!zone.simHand) return;
+
+        const idx = zone.simHand.findIndex(c => c.instanceId === cardId);
+        if (idx > -1) {
+            const card = zone.simHand[idx];
+            zone.simHand.splice(idx, 1);
+
+            if (!zone.simGrave) zone.simGrave = [];
+            zone.simGrave.push(card);
+
+            this._log(`Sim: Used {${card.name}}.`);
         }
     }
 }

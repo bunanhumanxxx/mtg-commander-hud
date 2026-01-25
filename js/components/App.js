@@ -38,25 +38,41 @@ export function renderApp(container, store) {
                     <div class="setup-screen" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; width: 100%;">
                         <h1 style="color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); font-size: clamp(1.5rem, 5vw, 3rem); text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; margin-bottom: 3rem;">MTG Commander System</h1>
                         
-                        <div style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center;">
+                        <div style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1200px;">
                             <button id="start-full-btn" style="
-                                padding:1.5rem 3rem; font-size:1.2rem; cursor:pointer; 
-                                background: rgba(0, 243, 255, 0.1); border: 2px solid var(--neon-blue); color: var(--neon-blue); 
-                                box-shadow: 0 0 15px var(--neon-blue); border-radius: 8px; text-transform: uppercase; font-weight: bold;
-                                transition: all 0.3s;
+                                flex: 1; min-width: 300px; padding:2rem; font-size:1.5rem; cursor:pointer; 
+                                background: rgba(0, 10, 20, 0.8); border: 2px solid var(--neon-blue); color: var(--neon-blue); 
+                                box-shadow: 0 0 15px var(--neon-blue), inset 0 0 15px rgba(0, 243, 255, 0.2); 
+                                border-radius: 12px; text-transform: uppercase; font-weight: bold;
+                                transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                                text-shadow: 0 0 5px var(--neon-blue);
                             ">
-                                FULL SYSTEM MODE
-                                <div style="font-size: 0.8rem; font-weight: normal; margin-top: 5px; opacity: 0.8;">Board & Life Management</div>
+                                FULL SYSTEM
+                                <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; opacity: 0.8; text-shadow: none;">Board & Life Management</span>
                             </button>
 
                             <button id="start-life-btn" style="
-                                padding:1.5rem 3rem; font-size:1.2rem; cursor:pointer; 
-                                background: rgba(255, 0, 85, 0.1); border: 2px solid var(--neon-pink); color: var(--neon-pink); 
-                                box-shadow: 0 0 15px var(--neon-pink); border-radius: 8px; text-transform: uppercase; font-weight: bold;
-                                transition: all 0.3s;
+                                flex: 1; min-width: 300px; padding:2rem; font-size:1.5rem; cursor:pointer; 
+                                background: rgba(20, 0, 10, 0.8); border: 2px solid var(--neon-pink); color: var(--neon-pink); 
+                                box-shadow: 0 0 15px var(--neon-pink), inset 0 0 15px rgba(255, 0, 85, 0.2); 
+                                border-radius: 12px; text-transform: uppercase; font-weight: bold;
+                                transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                                text-shadow: 0 0 5px var(--neon-pink);
                             ">
-                                LIFE COUNTER MODE
-                                <div style="font-size: 0.8rem; font-weight: normal; margin-top: 5px; opacity: 0.8;">Life & Cmd Damage Only</div>
+                                LIFE COUNTER
+                                <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; opacity: 0.8; text-shadow: none;">Life & Cmd Damage Only</span>
+                            </button>
+
+                            <button id="start-deck-btn" style="
+                                flex: 1; min-width: 300px; padding:2rem; font-size:1.5rem; cursor:pointer; 
+                                background: rgba(0, 20, 10, 0.8); border: 2px solid var(--neon-green); color: var(--neon-green); 
+                                box-shadow: 0 0 15px var(--neon-green), inset 0 0 15px rgba(0, 255, 100, 0.2); 
+                                border-radius: 12px; text-transform: uppercase; font-weight: bold;
+                                transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                                text-shadow: 0 0 5px var(--neon-green);
+                            ">
+                                DECK BUILDER
+                                <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; opacity: 0.8; text-shadow: none;">Construct & Manage Decks</span>
                             </button>
                         </div>
                     </div>
@@ -66,11 +82,17 @@ export function renderApp(container, store) {
                 const addHover = (btnId, color) => {
                     const btn = document.getElementById(btnId);
                     btn.onmouseover = () => {
-                        btn.style.background = color === 'blue' ? 'rgba(0, 243, 255, 0.3)' : 'rgba(255, 0, 85, 0.3)';
+                        let bg = 'rgba(0, 243, 255, 0.3)';
+                        if (color === 'red') bg = 'rgba(255, 0, 85, 0.3)';
+                        if (color === 'green') bg = 'rgba(0, 255, 100, 0.3)';
+                        btn.style.background = bg;
                         btn.style.transform = 'scale(1.05)';
                     };
                     btn.onmouseout = () => {
-                        btn.style.background = color === 'blue' ? 'rgba(0, 243, 255, 0.1)' : 'rgba(255, 0, 85, 0.1)';
+                        let bg = 'rgba(0, 243, 255, 0.1)';
+                        if (color === 'red') bg = 'rgba(255, 0, 85, 0.1)';
+                        if (color === 'green') bg = 'rgba(0, 255, 100, 0.1)';
+                        btn.style.background = bg;
                         btn.style.transform = 'scale(1)';
                     };
                 };
@@ -89,6 +111,16 @@ export function renderApp(container, store) {
                 document.getElementById('start-life-btn').addEventListener('click', () => {
                     import('./LifeCounterSetupModal.js?v=' + Date.now()).then(({ LifeCounterSetupModal }) => {
                         const modal = new LifeCounterSetupModal(store);
+                        container.appendChild(modal.render());
+                    });
+                });
+
+                addHover('start-deck-btn', 'green');
+
+                // Deck Builder Setup
+                document.getElementById('start-deck-btn').addEventListener('click', () => {
+                    import('./DeckBuilderSetupModal.js?v=' + Date.now()).then(({ DeckBuilderSetupModal }) => {
+                        const modal = new DeckBuilderSetupModal(store);
                         container.appendChild(modal.render());
                     });
                 });
@@ -112,6 +144,25 @@ export function renderApp(container, store) {
                             window.lifeCounterInstance.update(state);
                         }
                     }
+                });
+                return;
+            } else if (state.settings.gameMode === 'deck_builder') {
+                import('./DeckBuilderApp.js?v=' + Date.now()).then(({ DeckBuilderApp }) => {
+                    // Single instance logic for efficiency? Or just rebuild. Layout is simple.
+                    // Let's use new instance every time for cleaner state reset.
+                    container.innerHTML = '';
+                    try {
+                        const app = new DeckBuilderApp(store);
+                        container.appendChild(app.render());
+                    } catch (err) {
+                        console.error('DeckBuilder Render Error:', err);
+                        alert('Deck Builder Error: ' + err.message);
+                        location.reload();
+                    }
+                }).catch(err => {
+                    console.error('DeckBuilder Import Error:', err);
+                    alert('Failed to load Deck Builder module: ' + err.message);
+                    location.reload();
                 });
                 return;
             } else {

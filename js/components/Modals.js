@@ -36,8 +36,9 @@ export class SetupModal {
 
                 <div id="players-config"></div>
                 
-                <div class="form-actions" style="margin-top: 2rem; text-align: center;">
-                    <button id="start-game-confirm" class="hud-btn-primary">Start Game</button>
+                <div class="form-actions" style="margin-top: 2rem; text-align: center; display: flex; flex-direction: column; gap: 1rem;">
+                    <button id="start-game-confirm" class="hud-btn-primary" style="width: 100%;">Start Game</button>
+                    <button id="btn-cancel" style="background: transparent; border: none; color: #666; cursor: pointer; text-decoration: underline;">Back to Menu</button>
                 </div>
             </div>
         `;
@@ -75,6 +76,10 @@ export class SetupModal {
         });
 
         this.element.querySelector('#start-game-confirm').addEventListener('click', () => this.handleStart());
+
+        this.element.querySelector('#btn-cancel').onclick = () => {
+            this.element.remove();
+        };
 
         // Initial render
         this.manualTurnOrder = false;
