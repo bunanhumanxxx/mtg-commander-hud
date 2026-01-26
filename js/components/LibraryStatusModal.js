@@ -49,6 +49,12 @@ export class LibraryStatusModal {
                     <button class="adj-btn" data-val="5" style="padding: 0.8rem 1.2rem; background: #225522; color: white; border: 1px solid #447744; border-radius: 4px; cursor: pointer;">+5</button>
                 </div>
 
+                <div id="sim-search-container" style="display: none; padding: 0 1rem;">
+                    <button id="btn-search-deck" style="width: 100%; padding: 0.8rem; background: #00add8; color: white; border: none; font-weight: bold; border-radius: 4px; cursor: pointer;">
+                        SEARCH DECK (Sim)
+                    </button>
+                </div>
+
                 <button id="btn-close" style="padding: 0.8rem; background: #444; color: white; border: 1px solid #666; cursor: pointer; border-radius: 4px; width: 100%; font-weight: bold;">Close (Apply Log)</button>
             </div>
         `;
@@ -70,6 +76,23 @@ export class LibraryStatusModal {
         this.element.querySelector('#btn-close').addEventListener('click', () => {
             this.closeAndLog();
         });
+
+        // Search Logic
+        const zone = this.store.getState().zones[this.playerId];
+        if (zone && zone.simLibrary) {
+            this.element.querySelector('#sim-search-container').style.display = 'block';
+            this.element.querySelector('#btn-search-deck').onclick = () => {
+                import('./SimSearchModal.js?v=' + Date.now()).then(({ SimSearchModal }) => {
+                    const modal = new SimSearchModal(this.store, this.playerId, this.destination, () => {
+                        // Refresh Display after Search
+                        const p = this.store.getState().players.find(x => x.id === this.playerId);
+                        const display = this.element.querySelector('#lib-count-display');
+                        if (display) display.textContent = p.libraryCount;
+                    });
+                    document.body.appendChild(modal.render());
+                });
+            };
+        }
 
         return this.element;
     }

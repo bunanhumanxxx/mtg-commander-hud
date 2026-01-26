@@ -7,6 +7,7 @@ export class SetupModal {
         this.store = store;
         this.element = null;
         this.players = [];
+        this.loadedDecks = {}; // Track loaded decks by index (1-based from UI loop, but let's use carefully)
     }
 
     render() {
@@ -115,11 +116,22 @@ export class SetupModal {
                 `;
             }
 
+            // Load logic display
+            const loaded = this.loadedDecks[i];
+            const commanderText = loaded && loaded.commanders ?
+                loaded.commanders.map(c => c.name).join(' & ') : '';
+            if (loaded) console.log(`Rendering player ${i} with loaded deck:`, loaded.name);
+
             playerDiv.innerHTML = `
-                <div style="display:flex; justify-content:space-between;">
-                    <div style="display:flex; align-items:center;">
-                        <h3 style="color: var(--neon-blue);">Player ${i}</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap: 1rem;">
+                        <h3 style="color: var(--neon-blue); margin:0;">Player ${i}</h3>
                         ${turnOrderInput}
+                        <button class="load-deck-btn" style="
+                            background: #333; color: #ccc; border: 1px solid #555; padding: 2px 8px; font-size: 0.8rem; cursor: pointer; border-radius: 4px;
+                        ">📂 Load Deck JSON</button>
+                        <input type="file" class="deck-file-input" accept=".json" style="display:none;">
+                        <span class="deck-status" style="font-size: 0.8rem; color: #4CAF50;">${commanderText}</span>
                     </div>
                     <label class="hud-checkbox-container partner-check-label">
                         <input type="checkbox" class="partner-check">
@@ -127,10 +139,10 @@ export class SetupModal {
                         Partner
                     </label>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                     <div>
                         <label>Name</label>
-                        <input type="text" class="p-name" value="Player ${i}" style="width: 100%; padding: 0.5rem; background: #333; color: white; border: 1px solid #555;">
+                        <input type="text" class="p-name" value="${loaded && loaded.name ? loaded.name : `Player ${i}`}" style="width: 100%; padding: 0.5rem; background: #333; color: white; border: 1px solid #555;">
                     </div>
                     <div>
                         <label>Life</label>
@@ -174,26 +186,79 @@ export class SetupModal {
                 else partnerSection.classList.add('hidden');
             });
 
-            // Commander Selectors
+            // JSON Loader Logic
+            const loadBtn = playerDiv.querySelector('.load-deck-btn');
+            const fileInput = playerDiv.querySelector('.deck-file-input');
+            const deckStatus = playerDiv.querySelector('.deck-status');
+
+            loadBtn.onclick = () => fileInput.click();
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    try {
+                        const deckData = JSON.parse(evt.target.result);
+                        this.loadedDecks[i] = deckData;
+
+                        // Update UI
+                        const cmdNames = (deckData.commanders || []).map(c => c.name).join(' & ');
+                        deckStatus.textContent = cmdNames || 'Loaded (No Commanders)';
+
+                        // Name
+                        if (deckData.name) {
+                            playerDiv.querySelector('.p-name').value = deckData.name;
+                        }
+
+                        // Commanders
+                        if (deckData.commanders && deckData.commanders.length > 0) {
+                            // Slot 0
+                            const c1 = deckData.commanders[0];
+                            this._updateCommanderSlot(playerDiv, 0, c1);
+
+                            // Slot 1
+                            if (deckData.commanders.length > 1) {
+                                const c2 = deckData.commanders[1];
+                                partnerCheck.checked = true;
+                                partnerSection.classList.remove('hidden');
+                                this._updateCommanderSlot(playerDiv, 1, c2);
+                            } else {
+                                partnerCheck.checked = false;
+                                partnerSection.classList.add('hidden');
+                                // Clear slot 1? optional
+                            }
+                        }
+
+                    } catch (err) {
+                        console.error('JSON Error', err);
+                        alert('Invalid Deck JSON');
+                    }
+                }
+                reader.readAsText(file);
+            };
+
+            // Pre-fill if re-rendering from loaded (though loop just re-creates)
+            if (loaded && loaded.commanders) {
+                if (loaded.commanders[0]) this._updateCommanderSlot(playerDiv, 0, loaded.commanders[0]);
+                if (loaded.commanders.length > 1) {
+                    partnerCheck.checked = true;
+                    partnerSection.classList.remove('hidden');
+                    this._updateCommanderSlot(playerDiv, 1, loaded.commanders[1]);
+                }
+            }
+
+            // Commander Selectors (Manual)
             playerDiv.querySelectorAll('.p-commander-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const slot = e.target.dataset.slot;
-                    const previewRow = playerDiv.querySelector(`.commander-preview-info[data-slot="${slot}"]`);
-                    const previewText = previewRow.querySelector('.preview-text');
-                    const previewImgContainer = previewRow.querySelector('.preview-img-container');
                     const hiddenInput = playerDiv.querySelector(`.p-commander-data-${slot}`);
 
                     import('./CardSearchModal.js?v=' + Date.now()).then(({ CardSearchModal }) => {
                         const modal = new CardSearchModal(this.store, null, (card) => {
-                            hiddenInput.value = JSON.stringify(card);
-                            previewText.textContent = card.name;
-                            previewText.style.color = '#fff';
-                            if (card.image_url) {
-                                previewImgContainer.style.flexShrink = '0';
-                                previewImgContainer.innerHTML = `<img src="${card.image_url}" style="height: 60px; max-width: 100px; border-radius: 4px; object-fit: contain; display: block;">`;
-                            } else {
-                                previewImgContainer.innerHTML = '<span style="font-size:0.8rem">No Image</span>';
-                            }
+                            this._updateCommanderSlot(playerDiv, slot, card);
+
+                            // Update local loadedDecks tracking if mixed manual/auto?
+                            // Ideally stick to DOM state unless we want persistent state
                         });
                         document.body.appendChild(modal.render());
                     });
@@ -216,11 +281,8 @@ export class SetupModal {
                     const currentVal = select.value;
                     Array.from(select.options).forEach(option => {
                         if (!option.value) return; // Skip default/empty
-                        // Disable if selected elsewhere (in values list) AND not self (currentVal)
-                        // If currentVal equals option.value, we keep it enabled so we can see it
                         if (selectedValues.includes(option.value) && option.value !== currentVal) {
                             option.disabled = true;
-                            // Visual cue? Browser handles disabled usually
                         } else {
                             option.disabled = false;
                         }
@@ -231,9 +293,24 @@ export class SetupModal {
             selects.forEach(s => {
                 s.addEventListener('change', updateTurnSelects);
             });
-
-            // Initial call (likely does nothing as all are empty, but good practice)
             updateTurnSelects();
+        }
+    }
+
+    _updateCommanderSlot(playerDiv, slot, card) {
+        const previewRow = playerDiv.querySelector(`.commander-preview-info[data-slot="${slot}"]`);
+        const previewText = previewRow.querySelector('.preview-text');
+        const previewImgContainer = previewRow.querySelector('.preview-img-container');
+        const hiddenInput = playerDiv.querySelector(`.p-commander-data-${slot}`);
+
+        hiddenInput.value = JSON.stringify(card);
+        previewText.textContent = card.name;
+        previewText.style.color = '#fff';
+        if (card.image_url) {
+            previewImgContainer.style.flexShrink = '0';
+            previewImgContainer.innerHTML = `<img src="${card.image_url}" style="height: 60px; max-width: 100px; border-radius: 4px; object-fit: contain; display: block;">`;
+        } else {
+            previewImgContainer.innerHTML = '<span style="font-size:0.8rem">No Image</span>';
         }
     }
 
@@ -260,7 +337,7 @@ export class SetupModal {
             }
         }
 
-        rows.forEach(row => {
+        rows.forEach((row, index) => {
             const name = row.querySelector('.p-name').value;
             const life = parseInt(row.querySelector('.p-life').value);
             const mulligan = parseInt(row.querySelector('.p-mulligan').value);
@@ -278,47 +355,48 @@ export class SetupModal {
             if (cmd0Str) commanders.push(JSON.parse(cmd0Str));
             if (isPartner && cmd1Str) commanders.push(JSON.parse(cmd1Str));
 
+            // Retrieve Loaded Deck Library if available
+            // Row dataset or loadedDecks map
+            // We tracked loadedDecks by index 'i' (1-based), but rows loop is 0-based.
+            // The row dataset.originalId = i.
+            const originalId = parseInt(row.dataset.originalId);
+            const loaded = this.loadedDecks[originalId];
+
+            let initialLibrary = null;
+            if (loaded && loaded.library) {
+                initialLibrary = loaded.library;
+            }
+
             players.push({
                 name,
                 life,
                 mulliganCount: mulligan,
                 commanders: commanders,
-                isPartner: isPartner, // Pass checkbox state
-                _sortOrder: sortOrder // temporary for sorting
+                isPartner: isPartner,
+                _sortOrder: sortOrder,
+                initialLibrary: initialLibrary // Pass lib
             });
         });
 
         if (this.manualTurnOrder) {
-            // Sort players by specified order
             players.sort((a, b) => a._sortOrder - b._sortOrder);
         }
 
-        // Clean up temporary prop
         players.forEach(p => delete p._sortOrder);
 
         // --- Transition Sequence ---
-        // 1. Play Glitch Animation on Modal
         this.element.querySelector('.modal-content').classList.add('modal-exit-anim');
-
-        // 2. Play Audio (Optional placeholder)
-        // const audio = new Audio('assets/sounds/boot.mp3'); audio.play().catch(e => {});
-
-        // 3. Create Fullscreen Overlay
         const overlay = document.createElement('div');
         overlay.className = 'transition-overlay';
         document.body.appendChild(overlay);
 
-        // 4. Wait for Animation, then Init Game
         setTimeout(() => {
             this.store.dispatch('INIT_GAME', {
                 players: players,
                 options: { randomizeTurnOrder: !this.manualTurnOrder }
             });
             this.element.remove();
-
-            // Remove overlay shortly after game start (optional overlap)
             setTimeout(() => overlay.remove(), 200);
-
-        }, 800); // 800ms matches CSS animation duration
+        }, 800);
     }
 }

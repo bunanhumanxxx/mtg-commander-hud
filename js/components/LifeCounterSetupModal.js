@@ -170,11 +170,6 @@ export class LifeCounterSetupModal {
 
         this.element.querySelector('#back-btn').onclick = () => {
             this.element.remove();
-            // Reload App to show start screen again (simplest way without router)
-            // Or better: App.js handles it if we don't start game.
-            // But App.js doesn't re-render unless store changes.
-            // We can just trigger a dummy notify or remove this and let user be.
-            // Actually, if we remove this modal, we are back to the Start Screen (App.js innerHTML).
         };
 
         return this.element;

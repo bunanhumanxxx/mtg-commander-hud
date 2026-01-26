@@ -7,7 +7,8 @@ export class HandSimulatorModal {
         this.element = null;
         this.unsubscribe = null;
         this.useMode = false;
-        this.selectedCardId = null; // Track locally selected card for Use Mode
+        this.useMode = false;
+        this.selectedCardIds = new Set(); // Track selected cards for Use Mode
         this._globalClick = null;
     }
 
@@ -41,6 +42,11 @@ export class HandSimulatorModal {
                         <span id="sim-deck-count" style="
                             background: #333; color: #ccc; padding: 2px 8px; border-radius: 4px; font-size: 0.9rem; font-family: monospace;
                         ">Deck: 0</span>
+                        
+                        <!-- No Max Hand Checkbox (Full System Only) -->
+                        <label id="no-max-hand-container" style="display: none; align-items: center; gap: 0.5rem; color: #aaa; font-size: 0.9rem; cursor: pointer; margin-left: 1rem;">
+                             <input type="checkbox" id="sim-no-max-hand"> No Max Hand
+                        </label>
                     </div>
                     
                     <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
@@ -91,6 +97,24 @@ export class HandSimulatorModal {
             }
         };
         document.addEventListener('click', this._globalClick);
+
+        // No Max Hand Logic
+        const settings = this.store.getState().settings;
+        const noMaxContainer = this.element.querySelector('#no-max-hand-container');
+        const noMaxCheck = this.element.querySelector('#sim-no-max-hand');
+
+        if (settings.gameMode !== 'deck_builder') {
+            noMaxContainer.style.display = 'flex';
+            const player = this.store.getState().players.find(p => p.id === this.playerId);
+            if (player) noMaxCheck.checked = player.noMaxHandSize || false;
+
+            noMaxCheck.addEventListener('change', (e) => {
+                this.store.dispatch('TOGGLE_NO_MAX_HAND', {
+                    playerId: this.playerId,
+                    value: e.target.checked
+                });
+            });
+        }
 
         return this.element;
     }
@@ -155,14 +179,16 @@ export class HandSimulatorModal {
 
         this.element.querySelector('#btn-start').onclick = () => {
             if (confirm('Reset deck and draw new hand?')) {
-                this.store.dispatch('TEST_INIT_HAND', { playerId: this.playerId });
-                this.selectedCardId = null;
+                if (confirm('Reset deck and draw new hand?')) {
+                    this.store.dispatch('TEST_INIT_HAND', { playerId: this.playerId });
+                    this.selectedCardIds.clear();
+                }
             }
         };
 
         this.element.querySelector('#btn-mulligan').onclick = () => {
             this.store.dispatch('TEST_MULLIGAN', { playerId: this.playerId });
-            this.selectedCardId = null;
+            this.selectedCardIds.clear();
         };
 
         this.element.querySelector('#btn-draw').onclick = () => {
@@ -177,7 +203,7 @@ export class HandSimulatorModal {
         useBtn.style.display = 'inline-block';
         useBtn.onclick = () => {
             this.useMode = !this.useMode;
-            this.selectedCardId = null;
+            this.selectedCardIds.clear();
             if (this.useMode) {
                 useBtn.classList.add('active');
                 useBtn.textContent = 'USE MODE (ON)';
@@ -225,7 +251,8 @@ export class HandSimulatorModal {
 
             if (this.useMode) {
                 // Selection Logic
-                if (this.selectedCardId === card.instanceId) {
+                // Selection Logic
+                if (this.selectedCardIds.has(card.instanceId)) {
                     el.style.border = '3px solid #f44336';
                     el.style.transform = 'scale(1.05)';
                 } else {
@@ -235,7 +262,11 @@ export class HandSimulatorModal {
 
                 el.onclick = (e) => {
                     e.stopPropagation();
-                    this.selectedCardId = card.instanceId;
+                    if (this.selectedCardIds.has(card.instanceId)) {
+                        this.selectedCardIds.delete(card.instanceId);
+                    } else {
+                        this.selectedCardIds.add(card.instanceId);
+                    }
                     this._hideCtxMenu();
                     this._update();
                 };
@@ -243,9 +274,11 @@ export class HandSimulatorModal {
                 el.oncontextmenu = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (this.selectedCardId === card.instanceId) {
-                        this._showCtxMenu(e.clientX, e.clientY, card);
+                    if (!this.selectedCardIds.has(card.instanceId)) {
+                        this.selectedCardIds.add(card.instanceId);
+                        this._update();
                     }
+                    this._showCtxMenu(e.clientX, e.clientY);
                     return false;
                 };
             } else {
@@ -271,7 +304,7 @@ export class HandSimulatorModal {
         });
     }
 
-    _showCtxMenu(x, y, card) {
+    _showCtxMenu(x, y) {
         this._hideCtxMenu();
 
         const menu = document.createElement('div');
@@ -284,21 +317,34 @@ export class HandSimulatorModal {
             display: flex; flex-direction: column; gap: 0.5rem; min-width: 100px;
         `;
 
+        const count = this.selectedCardIds.size;
         const btn = document.createElement('button');
-        btn.textContent = `USE`;
+        btn.textContent = `MOVE (${count})`;
         btn.style.cssText = `
             background: #f44336; color: white; border: none; padding: 0.5rem 1rem;
             cursor: pointer; font-weight: bold; border-radius: 2px; text-align: left;
         `;
         btn.onclick = (e) => {
             e.stopPropagation();
-            this.store.dispatch('TEST_USE', {
-                playerId: this.playerId,
-                cardId: card.instanceId
-            });
-            this.selectedCardId = null;
             this._hideCtxMenu();
-            this._update();
+
+            // Check if any selected card is a Commander
+            const state = this.store.getState();
+            const zone = state.zones[this.playerId];
+            const hasCommander = zone?.simHand?.some(c => this.selectedCardIds.has(c.instanceId) && c.isCommander);
+
+            import('./ZoneSelectModal.js?v=' + Date.now()).then(({ ZoneSelectModal }) => {
+                const modal = new ZoneSelectModal(`${count} Cards`, (zone) => {
+                    this.store.dispatch('MOVE_SIM_CARDS', {
+                        playerId: this.playerId,
+                        cardIds: Array.from(this.selectedCardIds),
+                        destination: zone
+                    });
+                    this.selectedCardIds.clear();
+                    this._update();
+                }, () => { }, { isCommander: hasCommander });
+                document.body.appendChild(modal.render());
+            });
         };
 
         menu.appendChild(btn);

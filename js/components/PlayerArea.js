@@ -383,10 +383,20 @@ export function renderPlayerArea(player, store, isActive) {
 
     // Hand Click Event
     header.querySelector('.hand-display').addEventListener('click', () => {
-        import('./HandStatusModal.js?v=' + Date.now()).then(({ HandStatusModal }) => {
-            const modal = new HandStatusModal(store, player.id);
-            document.body.appendChild(modal.render());
-        });
+        const pZone = store.getState().zones[player.id];
+        const hasDeck = pZone.library && pZone.library.length > 0;
+
+        if (hasDeck) {
+            import('./HandSimulatorModal.js?v=' + Date.now()).then(({ HandSimulatorModal }) => {
+                const modal = new HandSimulatorModal(store, player.id);
+                document.body.appendChild(modal.render());
+            });
+        } else {
+            import('./HandStatusModal.js?v=' + Date.now()).then(({ HandStatusModal }) => {
+                const modal = new HandStatusModal(store, player.id);
+                document.body.appendChild(modal.render());
+            });
+        }
     });
 
     // Library Click Event

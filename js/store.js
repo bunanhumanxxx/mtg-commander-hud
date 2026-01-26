@@ -169,6 +169,15 @@ export class Store {
             case 'TEST_USE':
                 this._testUse(payload);
                 break;
+            case 'DISCARD_SIM_CARDS':
+                this._discardSimCards(payload);
+                break;
+            case 'SEARCH_SIM_DECK':
+                this._searchSimDeck(payload);
+                break;
+            case 'MOVE_SIM_CARDS':
+                this._moveSimCards(payload);
+                break;
             // Add more actions as needed
         }
 
@@ -443,9 +452,20 @@ export class Store {
 
             if (destination === 'library') {
                 const player = this.state.players.find(p => p.id === playerId);
-                player.libraryCount++;
-                if (zone.library) zone.library.push(card); // Actually add to deck list
-                this._log(`${player.name} moved {${card.name}} to Library (Bottom). (Deck: ${player.libraryCount})`);
+
+                // Cleanup
+                card.tapped = false;
+                if (card.counters) card.counters = {};
+
+                if (zone.simLibrary) {
+                    zone.simLibrary.push(card); // Add to active Sim Deck
+                    player.libraryCount = zone.simLibrary.length;
+                    this._log(`${player.name} moved {${card.name}} to Library (Sim). (Deck: ${player.libraryCount})`);
+                } else {
+                    player.libraryCount++;
+                    if (zone.library) zone.library.push(card); // Add to Master/Simple Deck
+                    this._log(`${player.name} moved {${card.name}} to Library. (Deck: ${player.libraryCount})`);
+                }
             } else {
                 // Ownership Logic: If leaving battlefield (and not to battlefield), return to OWNER's zone
                 let targetZone = zone;
@@ -461,6 +481,11 @@ export class Store {
                     if (destination === 'hand') {
                         const tPlayer = this.state.players.find(p => p.id === targetPlayerId);
                         tPlayer.handCount++;
+
+                        // Sync to Hand Simulator if active AND Deck is Loaded
+                        if (targetZone.simHand && targetZone.library && targetZone.library.length > 0) {
+                            targetZone.simHand.push(card); // Add real card object to sim hand
+                        }
                     }
 
                     // Commander Tax Logic
@@ -572,7 +597,8 @@ export class Store {
                     commanders: commanders,
                     eliminated: false,
                     isPartner: isPartner,
-                    noMaxHandSize: false // Default: Limit 7
+                    noMaxHandSize: false, // Default: Limit 7
+                    initialLibrary: p.initialLibrary // Preserve passed library for simulation
                 };
             });
 
@@ -606,13 +632,48 @@ export class Store {
                     counters: {}
                 }));
 
+                // Deck Simulation Logic
+                let simHand = [];
+                let simLibrary = [];
+                let masterLibrary = []; // Reference for restarts
+
+                if (p.initialLibrary && Array.isArray(p.initialLibrary)) {
+                    // Use initialLibrary as the Master Record (Raw data ok for re-instantiation)
+                    // We also ensure masterLibrary has what we need
+                    masterLibrary = p.initialLibrary;
+
+                    // 1. Instantiate Cards for NOW
+                    const deckCards = p.initialLibrary.map(c => ({
+                        ...c,
+                        instanceId: generateId(),
+                        ownerId: p.id,
+                        tapped: false,
+                        counters: {}
+                    }));
+
+                    // 2. Shuffle
+                    const shuffled = shuffle(deckCards);
+
+                    // 3. Draw Initial Hand (7 - mulligans)
+                    const drawCount = p.handCount;
+                    simHand = shuffled.slice(0, drawCount);
+                    simLibrary = shuffled.slice(drawCount);
+
+                    // Sync counts
+                    p.handCount = simHand.length;
+                    p.libraryCount = simLibrary.length;
+                }
+
                 this.state.zones[p.id] = {
                     battlefield: [],
                     grave: [],
                     exile: [],
                     command: commandZoneCards,
-                    hand: [],
-                    sideboard: [] // New zone for Deck Builder Candidates
+                    hand: [], // "Classic" hand tracking (often empty if we just track count, but Simulator uses simHand)
+                    library: masterLibrary, // Master list (needed for TEST_INIT_HAND reset)
+                    simHand: simHand, // Real cards for Hand Simulator
+                    simLibrary: simLibrary, // Real cards for Library
+                    sideboard: []
                 };
             });
 
@@ -886,8 +947,16 @@ export class Store {
         }
 
         // DRAW STEP
-        nextPlayer.handCount++;
-        nextPlayer.libraryCount--; // Draw from library
+        // DRAW STEP
+        if (activeZone.simLibrary && activeZone.simLibrary.length > 0 && activeZone.simHand) {
+            const card = activeZone.simLibrary.pop();
+            activeZone.simHand.push(card);
+            nextPlayer.handCount = activeZone.simHand.length;
+            nextPlayer.libraryCount = activeZone.simLibrary.length;
+        } else {
+            nextPlayer.handCount++;
+            nextPlayer.libraryCount = Math.max(0, nextPlayer.libraryCount - 1);
+        }
 
         this._log(`Turn ${this.state.turn.count}: ${nextPlayer.name}'s turn. Untap & Draw. (Hand:${nextPlayer.name}:${nextPlayer.handCount})`);
     }
@@ -946,14 +1015,51 @@ export class Store {
 
     _adjustLibrary({ playerId, amount, destination, silent }) {
         const player = this.state.players.find(p => p.id === playerId);
+        const zone = this.state.zones[playerId];
         if (!player) return;
 
+        // Check for Simulation Mode (Real Deck)
+        if (zone.simLibrary && zone.simLibrary.length > 0 && amount < 0) {
+            // --- SIMULATION LOGIC ---
+            const count = Math.abs(amount);
+            // Default to 'grave' (Mill) if no destination specified, per user request
+            const targetDest = destination || 'grave';
+
+            let movedCount = 0;
+            for (let i = 0; i < count; i++) {
+                const card = zone.simLibrary.pop();
+                if (card) {
+                    movedCount++;
+                    card.tapped = false;
+                    if (targetDest === 'hand') {
+                        if (zone.simHand) zone.simHand.push(card);
+                    } else if (targetDest === 'grave') {
+                        zone.grave.push(card);
+                    } else if (targetDest === 'exile') {
+                        zone.exile.push(card);
+                    }
+                }
+            }
+
+            // Sync Counts
+            player.libraryCount = zone.simLibrary.length;
+            if (targetDest === 'hand' && zone.simHand) {
+                player.handCount = zone.simHand.length;
+            }
+
+            if (!silent) {
+                const destName = targetDest === 'grave' ? 'Graveyard' : (targetDest === 'hand' ? 'Hand' : 'Exile');
+                this._log(`${player.name} moved ${movedCount} cards from Deck to ${destName}. (Deck: ${player.libraryCount})`);
+            }
+            return;
+        }
+
+        // --- LEGACY/COUNTER ONLY LOGIC ---
         player.libraryCount = (player.libraryCount || 0) + amount;
         if (player.libraryCount < 0) player.libraryCount = 0;
 
         if (destination && amount < 0) {
             const count = Math.abs(amount);
-            const zone = this.state.zones[playerId];
 
             if (destination === 'hand') {
                 player.handCount = (player.handCount || 0) + count;
@@ -1200,6 +1306,12 @@ export class Store {
         }
 
         this._log(`Sim: Mulligan (Hand -> Bottom, Draw 7).`);
+        // Sync Count
+        const player = this.state.players.find(p => p.id === playerId);
+        if (player) {
+            player.handCount = zone.simHand.length;
+            player.libraryCount = zone.simLibrary.length;
+        }
     }
 
     _testDraw({ playerId, count = 1 }) {
@@ -1214,7 +1326,13 @@ export class Store {
                 actual++;
             }
         }
-        this._log(`Sim: Drew ${actual} card(s).`);
+        // Sync Count
+        const player = this.state.players.find(p => p.id === playerId);
+        if (player) {
+            player.handCount = zone.simHand.length;
+            player.libraryCount = zone.simLibrary.length;
+            this._log(`${player.name} (sim) drew ${actual} card(s) (hand:${player.handCount})`);
+        }
     }
 
     _testSearch({ playerId, cardId }) {
@@ -1231,7 +1349,13 @@ export class Store {
             // Shuffle after search
             zone.simLibrary = shuffle(zone.simLibrary);
 
-            this._log(`Sim: Searched {${card.name}} and shuffled.`);
+            // Sync Count (Hand +1, Lib -1)
+            const player = this.state.players.find(p => p.id === playerId);
+            if (player) {
+                player.handCount = zone.simHand.length;
+                player.libraryCount = zone.simLibrary.length;
+                this._log(`${player.name} (sim) search {${card.name}} (hand:${player.handCount})`);
+            }
         }
     }
 
@@ -1248,6 +1372,145 @@ export class Store {
             zone.simGrave.push(card);
 
             this._log(`Sim: Used {${card.name}}.`);
+            // Sync Count (Hand -1)
+            const player = this.state.players.find(p => p.id === playerId);
+            if (player) {
+                player.handCount = zone.simHand.length;
+            }
         }
+    }
+
+    _discardSimCards({ playerId, cardIds }) {
+        const zone = this.state.zones[playerId];
+        const player = this.state.players.find(p => p.id === playerId);
+        if (!zone.simHand || !player) return;
+
+        let discardedCount = 0;
+        cardIds.forEach(id => {
+            const idx = zone.simHand.findIndex(c => c.instanceId === id);
+            if (idx > -1) {
+                const card = zone.simHand[idx];
+                zone.simHand.splice(idx, 1);
+
+                // Move to Real Grave for visibility
+                // Ensure card cleanup if needed?
+                card.tapped = false;
+                zone.grave.push(card);
+                discardedCount++;
+            }
+        });
+
+        // Sync Count
+        player.handCount = zone.simHand.length;
+
+        this._log(`${player.name} discarded ${discardedCount} cards (Hand Limit). (Hand:${player.name}:${player.handCount})`);
+    }
+
+    _searchSimDeck({ playerId, cardId, destination }) {
+        const zone = this.state.zones[playerId];
+        const player = this.state.players.find(p => p.id === playerId);
+        if (!zone.simLibrary || !player) return;
+
+        const idx = zone.simLibrary.findIndex(c => c.instanceId === cardId);
+        if (idx > -1) {
+            const card = zone.simLibrary[idx];
+            zone.simLibrary.splice(idx, 1);
+            card.tapped = false;
+
+            let destName = 'Void';
+            if (destination === 'hand') {
+                if (zone.simHand) zone.simHand.push(card);
+                destName = 'Hand';
+            } else if (destination === 'grave') {
+                zone.grave.push(card);
+                destName = 'Graveyard';
+            } else if (destination === 'exile') {
+                zone.exile.push(card);
+                destName = 'Exile';
+            }
+            // If destination is null/empty, just removed (Void)
+
+            // Shuffle
+            zone.simLibrary = shuffle(zone.simLibrary);
+
+            // Sync Counts
+            player.libraryCount = zone.simLibrary.length;
+            if (destination === 'hand' && zone.simHand) {
+                player.handCount = zone.simHand.length;
+            }
+
+            this._log(`${player.name} searched {${card.name}} from Deck -> ${destName}. Deck shuffled. (Deck: ${player.libraryCount})`);
+        }
+    }
+
+    _moveSimCards({ playerId, cardIds, destination }) {
+        const zone = this.state.zones[playerId];
+        const player = this.state.players.find(p => p.id === playerId);
+        if (!zone.simHand || !player) return;
+
+        let movedCount = 0;
+        cardIds.forEach(id => {
+            const idx = zone.simHand.findIndex(c => c.instanceId === id);
+            if (idx > -1) {
+                const card = zone.simHand[idx];
+                zone.simHand.splice(idx, 1);
+
+                // Also remove from zone.hand if present (Sync cleanup)
+                if (zone.hand) {
+                    const hIdx = zone.hand.findIndex(c => c.instanceId === id);
+                    if (hIdx > -1) zone.hand.splice(hIdx, 1);
+                }
+
+                movedCount++;
+
+                // Reset State
+                card.tapped = false;
+                if (card.counters) card.counters = {};
+
+                // Destination Logic
+                if (destination === 'battlefield') {
+                    // Auto-Sort based on Type
+                    const lower = (card.type_line || '').toLowerCase();
+                    const isSpell = lower.includes('instant') || lower.includes('sorcery') ||
+                        lower.includes('インスタント') || lower.includes('ソーサリー');
+                    const isLand = lower.includes('land') || lower.includes('土地');
+
+                    if (isSpell && !isLand) {
+                        zone.grave.push(card); // Spells go to grave
+                    } else {
+                        card.isLand = isLand; // Ensure flag
+                        zone.battlefield.push(card);
+                    }
+                } else if (destination === 'grave') {
+                    zone.grave.push(card);
+                } else if (destination === 'exile') {
+                    zone.exile.push(card);
+                } else if (destination === 'library') {
+                    if (zone.simLibrary) zone.simLibrary.push(card);
+                    else if (zone.library) zone.library.push(card);
+                } else if (destination === 'command') {
+                    zone.command.push(card);
+                    if (card.isCommander) {
+                        card.commanderTax = (card.commanderTax || 0) + 2;
+                        delete card.commanderStatus;
+                    }
+                }
+            }
+        });
+
+        // Sync Counts
+        player.handCount = zone.simHand.length;
+        if (destination === 'library' && zone.simLibrary) {
+            player.libraryCount = zone.simLibrary.length;
+        } else if (destination === 'library') {
+            // Fallback count update
+            player.libraryCount += movedCount;
+        }
+
+        const destName = {
+            'battlefield': 'Battlefield', 'grave': 'Graveyard', 'exile': 'Exile', 'library': 'Library', 'command': 'Command Zone'
+        }[destination] || destination;
+
+        this._log(`${player.name} moved ${movedCount} cards from Hand (Sim) to ${destName}. (Hand:${player.handCount})`);
     }
 }

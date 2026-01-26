@@ -232,7 +232,19 @@ export function renderApp(container, store) {
                 // Actually if collapsed, innerHTML is still there but hidden.
                 // It's safer to add listeners always unless we optimize render.
                 sidebar.querySelector('#next-turn-btn').addEventListener('click', () => {
-                    store.dispatch('NEXT_TURN');
+                    const st = store.getState();
+                    const p = st.players.find(pl => pl.id === st.turn.activePlayerId);
+                    const z = st.zones[p?.id];
+
+                    if (p && !p.noMaxHandSize && p.handCount > 7 && z && z.simHand && z.simHand.length > 0 && z.library && z.library.length > 0) {
+                        import('./DiscardSelectModal.js?v=' + Date.now()).then(({ DiscardSelectModal }) => {
+                            const excess = p.handCount - 7;
+                            const modal = new DiscardSelectModal(store, p.id, excess, () => store.dispatch('NEXT_TURN'));
+                            document.body.appendChild(modal.render());
+                        });
+                    } else {
+                        store.dispatch('NEXT_TURN');
+                    }
                 });
 
                 // Event Listeners for new buttons
@@ -418,7 +430,19 @@ export function renderApp(container, store) {
                 floatTurnBtn.className = 'floating-turn-btn';
                 floatTurnBtn.innerText = 'NEXT PHASE';
                 floatTurnBtn.onclick = () => {
-                    store.dispatch('NEXT_TURN');
+                    const st = store.getState();
+                    const p = st.players.find(pl => pl.id === st.turn.activePlayerId);
+                    const z = st.zones[p?.id];
+
+                    if (p && !p.noMaxHandSize && p.handCount > 7 && z && z.simHand && z.simHand.length > 0 && z.library && z.library.length > 0) {
+                        import('./DiscardSelectModal.js?v=' + Date.now()).then(({ DiscardSelectModal }) => {
+                            const excess = p.handCount - 7;
+                            const modal = new DiscardSelectModal(store, p.id, excess, () => store.dispatch('NEXT_TURN'));
+                            document.body.appendChild(modal.render());
+                        });
+                    } else {
+                        store.dispatch('NEXT_TURN');
+                    }
                 };
                 container.appendChild(floatTurnBtn);
             }
