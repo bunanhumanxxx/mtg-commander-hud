@@ -83,6 +83,28 @@ export class HandSimulatorModal {
                 }
                 .sim-btn:hover { background: rgba(255,255,255,0.1); }
                 .sim-btn.active { background: rgba(244, 67, 54, 0.2); box-shadow: 0 0 10px rgba(244, 67, 54, 0.5); }
+                
+                /* Custom Checkbox */
+                #sim-no-max-hand {
+                    appearance: none; -webkit-appearance: none;
+                    width: 16px; height: 16px;
+                    background: #333;
+                    border: 1px solid #555;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    position: relative;
+                    vertical-align: middle;
+                }
+                #sim-no-max-hand:checked {
+                    background: cyan;
+                    border-color: cyan;
+                    box-shadow: 0 0 5px cyan;
+                }
+                #sim-no-max-hand:checked::after {
+                    content: '✔';
+                    position: absolute; top: -3px; left: 1px;
+                    font-size: 12px; color: black; font-weight: bold;
+                }
             </style>
         `;
 
@@ -145,18 +167,26 @@ export class HandSimulatorModal {
         content.appendChild(header);
 
         const list = document.createElement('div');
-        list.style.cssText = 'flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;';
+        list.style.cssText = 'flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;';
 
         const zone = this.store.getState().zones[this.playerId];
         const library = zone.simLibrary || [];
 
         library.forEach(card => {
             const item = document.createElement('div');
-            item.textContent = card.name;
+            // item.textContent = card.name; // Hide text, show image
+            item.title = card.name;
+            item.className = 'sim-search-card';
             item.style.cssText = `
-                padding: 0.5rem; background: #333; color: #ccc; border-radius: 4px; cursor: pointer;
-                font-size: 0.8rem; border: 1px solid #555;
+                width: 140px; aspect-ratio: 2.5/3.5;
+                background-image: url(${card.image_url}); background-size: cover; background-position: center;
+                border-radius: 6px; cursor: pointer;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+                border: 1px solid #444; transition: transform 0.1s;
             `;
+            item.onmouseenter = () => item.style.transform = 'scale(1.05)';
+            item.onmouseleave = () => item.style.transform = 'scale(1)';
+
             item.onclick = () => {
                 if (confirm(`Add ${card.name} to hand? (Will shuffle deck)`)) {
                     this.store.dispatch('TEST_SEARCH', {
@@ -179,10 +209,8 @@ export class HandSimulatorModal {
 
         this.element.querySelector('#btn-start').onclick = () => {
             if (confirm('Reset deck and draw new hand?')) {
-                if (confirm('Reset deck and draw new hand?')) {
-                    this.store.dispatch('TEST_INIT_HAND', { playerId: this.playerId });
-                    this.selectedCardIds.clear();
-                }
+                this.store.dispatch('TEST_INIT_HAND', { playerId: this.playerId });
+                this.selectedCardIds.clear();
             }
         };
 
@@ -282,11 +310,15 @@ export class HandSimulatorModal {
                     return false;
                 };
             } else {
-                el.title = 'Active USE MODE to interact.';
+                el.title = 'Click to Preview';
                 el.style.border = '1px solid #444';
-                // No click action in non-use mode (prevents detail modal)
+                // Click to Preview
                 el.onclick = (e) => {
-                    e.stopPropagation(); // Explicitly stop bubbling just in case
+                    e.stopPropagation();
+                    import('./CardDetailModal.js?v=' + Date.now()).then(({ CardDetailModal }) => {
+                        const modal = new CardDetailModal(card);
+                        document.body.appendChild(modal.render());
+                    });
                 };
                 el.oncontextmenu = (e) => {
                     e.preventDefault();

@@ -20,7 +20,7 @@ export class CardSearchModal {
 
         this.element.innerHTML = `
             <div class="search-modal-content" style="
-                background: rgba(10, 10, 20, 0.95); 
+                background: #050a14; 
                 border: 1px solid var(--neon-blue); 
                 box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); 
                 backdrop-filter: blur(10px); 

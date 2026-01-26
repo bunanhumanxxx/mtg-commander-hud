@@ -15,12 +15,24 @@ export class ConfirmationModal {
         `;
 
         this.element.innerHTML = `
-            <div class="confirm-modal-content" style="background: #2a2a2a; padding: 2rem; border-radius: 8px; width: 300px; display: flex; flex-direction: column; gap: 1rem; color: white; border: 1px solid #444;">
-                <h3 style="margin: 0; text-align: center; font-size:1.1rem;">${this.message}</h3>
+            <div class="confirm-modal-content" style="
+                background: #050a14; 
+                padding: 2rem; 
+                border-radius: 8px; 
+                width: 300px; 
+                display: flex; 
+                flex-direction: column; 
+                gap: 1rem; 
+                color: white; 
+                border: 1px solid cyan; 
+                box-shadow: 0 0 15px cyan, 0 0 30px rgba(0, 255, 255, 0.4), inset 0 0 10px rgba(0, 255, 255, 0.1);
+                backdrop-filter: blur(5px);
+            ">
+                <h3 style="margin: 0; text-align: center; font-size:1.1rem; color: cyan; text-shadow: 0 0 5px cyan;">${this.message}</h3>
                 
                 <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                    <button id="btn-yes" style="flex: 1; padding: 0.8rem; background: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight:bold;">Yes</button>
-                    <button id="btn-no" style="flex: 1; padding: 0.8rem; background: #f44336; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight:bold;">No</button>
+                    <button id="btn-yes" style="flex: 1; padding: 0.8rem; background: #0088AA; color: white; border: 1px solid cyan; cursor: pointer; border-radius: 4px; font-weight:bold; box-shadow: 0 0 5px cyan;">Yes</button>
+                    <button id="btn-no" style="flex: 1; padding: 0.8rem; background: transparent; color: #888; border: 1px solid #555; cursor: pointer; border-radius: 4px; font-weight:bold;">No</button>
                 </div>
             </div>
         `;

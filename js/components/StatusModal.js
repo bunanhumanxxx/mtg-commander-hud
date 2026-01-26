@@ -25,7 +25,7 @@ export class StatusModal {
 
         this.element.innerHTML = `
             <div class="status-content" style="
-                background: rgba(10, 10, 20, 0.95); 
+                background: #050a14; 
                 padding: 2rem; 
                 border-radius: 8px; 
                 text-align: center; 

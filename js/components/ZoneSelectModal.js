@@ -18,10 +18,10 @@ export class ZoneSelectModal {
         const showCommand = this.options.isCommander;
 
         this.element.innerHTML = `
-            <div class="zone-modal-content" style="background: #2a2a2a; padding: 2rem; border-radius: 8px; width: 300px; display: flex; flex-direction: column; gap: 1rem; color: white; border: 1px solid #444; max-height: 85vh; overflow-y: auto;">
-                <h3 style="margin: 0; text-align: center;">Select Destination</h3>
-                <p style="text-align: center; color: #ccc; font-size: 0.9rem;">
-                    Move <strong style="color: gold;">${this.cardName}</strong> to:
+            <div class="zone-modal-content" style="background: #050a14; padding: 2rem; border-radius: 8px; width: 300px; display: flex; flex-direction: column; gap: 1rem; color: white; border: 1px solid cyan; max-height: 85vh; overflow-y: auto; box-shadow: 0 0 20px cyan;">
+                <h3 style="margin: 0; text-align: center; color: cyan; text-shadow: 0 0 5px cyan;">Select Destination</h3>
+                <p style="text-align: center; color: #aee; font-size: 0.9rem;">
+                    Move <strong style="color: white; text-shadow: 0 0 5px cyan;">${this.cardName}</strong> to:
                 </p>
                 
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">

@@ -11,8 +11,8 @@ export class ControlSelectModal {
         this.element.className = 'modal-overlay';
         this.element.innerHTML = `
             <div class="modal-content" style="max-width: 320px; text-align: center;">
-                <h3 style="color: var(--neon-blue); margin-bottom: 1rem; font-size: 1.2rem;">Change Control</h3>
-                <p style="color: #ccc; margin-bottom: 1rem; font-size: 0.9rem;">Select target player to take control of <br><strong style="color: white;">${this.card.name}</strong></p>
+                <h3 style="color: cyan; margin-bottom: 1rem; font-size: 1.2rem; text-shadow: 0 0 5px cyan;">Change Control</h3>
+                <p style="color: #aee; margin-bottom: 1rem; font-size: 0.9rem;">Select target player to take control of <br><strong style="color: white; text-shadow: 0 0 2px cyan;">${this.card.name}</strong></p>
                 
                 <div class="control-options" style="display: flex; flex-direction: column; gap: 0.5rem;">
                     <!-- Player Buttons Injected Here -->
@@ -41,9 +41,9 @@ export class ControlSelectModal {
 
         const content = this.element.querySelector('.modal-content');
         content.style.cssText = `
-            background: rgba(10, 20, 30, 0.95); padding: 1.5rem; border-radius: 8px; 
-            border: 1px solid var(--neon-blue); box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
-            width: 90%; max-width: 320px;
+            background: #050a14; padding: 1.5rem; border-radius: 8px; 
+            border: 1px solid cyan; box-shadow: 0 0 20px cyan;
+            width: 90%; max-width: 320px; color: white;
         `;
 
         const optionsContainer = this.element.querySelector('.control-options');

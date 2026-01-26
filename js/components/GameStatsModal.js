@@ -206,7 +206,7 @@ export class GameStatsModal {
 
         this.element.innerHTML = `
             <div class="stats-modal-content" style="
-                background: rgba(10, 10, 20, 0.95); 
+                background: #050a14; 
                 padding: 2rem; 
                 border-radius: 8px; 
                 width: 95%; 

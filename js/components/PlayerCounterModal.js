@@ -15,9 +15,9 @@ export class PlayerCounterModal {
 
         const content = document.createElement('div');
         content.style.cssText = `
-            background: rgba(10, 10, 20, 0.95); 
-            border: 1px solid var(--neon-blue); 
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); 
+            background: #050a14; 
+            border: 1px solid cyan; 
+            box-shadow: 0 0 20px cyan; 
             backdrop-filter: blur(10px); 
             padding: 2rem; 
             border-radius: 8px; 
@@ -30,11 +30,11 @@ export class PlayerCounterModal {
         `;
 
         content.innerHTML = `
-            <h3 style="margin: 0; text-align: center; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); text-transform: uppercase; letter-spacing: 2px;">PLAYER COUNTER</h3>
+            <h3 style="margin: 0; text-align: center; color: cyan; text-shadow: 0 0 10px cyan; text-transform: uppercase; letter-spacing: 2px;">PLAYER COUNTER</h3>
             
             
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <label style="font-weight: bold; color: var(--neon-blue); font-size: 0.9rem; text-transform: uppercase;">Target</label>
+                <label style="font-weight: bold; color: cyan; font-size: 0.9rem; text-transform: uppercase;">Target</label>
                 <select id="counter-scope" class="hud-select" style="width: 100%;">
                     <option value="self">Self</option>
                     <option value="others">Others</option>
@@ -43,12 +43,12 @@ export class PlayerCounterModal {
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <label style="font-weight: bold; color: var(--neon-blue); font-size: 0.9rem; text-transform: uppercase;">Counter Name</label>
+                <label style="font-weight: bold; color: cyan; font-size: 0.9rem; text-transform: uppercase;">Counter Name</label>
                 <input type="text" id="counter-name" placeholder="Poison" style="width: 100%; padding: 0.5rem; box-sizing: border-box; background: #222; color: white; border: 1px solid #555; border-radius: 4px;">
             </div>
             
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label style="font-weight: bold; color: var(--neon-blue); font-size: 0.9rem; text-transform: uppercase;">Amount</label>
+                <label style="font-weight: bold; color: cyan; font-size: 0.9rem; text-transform: uppercase;">Amount</label>
                 <input type="number" id="counter-amount" value="1" style="width: 80px; padding: 0.5rem; box-sizing: border-box; background: #222; color: white; border: 1px solid #555; border-radius: 4px;">
             </div>
 

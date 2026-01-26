@@ -204,8 +204,8 @@ export class LifeCounterApp {
         const createBtn = (amt, type) => {
             const btn = document.createElement('button');
             const isPlus = amt > 0;
-            const bgColor = isPlus ? 'rgba(0, 68, 0, 0.7)' : 'rgba(68, 0, 0, 0.7)'; // Dark Green / Dark Red
-            const borderColor = isPlus ? '#00ff00' : '#ff0000';
+            const bgColor = isPlus ? 'rgba(20, 60, 20, 0.7)' : 'rgba(60, 20, 20, 0.7)'; // Less pure
+            const borderColor = isPlus ? '#44cc44' : '#cc4444'; // Desaturated Neon
 
             btn.textContent = (isPlus ? '+' : '') + amt;
             btn.className = 'lc-btn';
@@ -311,8 +311,8 @@ export class LifeCounterApp {
                     btn.textContent = label;
                     btn.style.cssText = `
                         width: clamp(30px, 5vmin, 60px); height: clamp(30px, 5vmin, 60px); 
-                        background: ${isPlus ? 'rgba(0,68,0,0.6)' : 'rgba(68,0,0,0.6)'}; 
-                        color: white; border: 1px solid ${isPlus ? '#00cc00' : '#cc0000'}; 
+                        background: ${isPlus ? 'rgba(20,60,20,0.6)' : 'rgba(60,20,20,0.6)'}; 
+                        color: white; border: 1px solid ${isPlus ? '#33aa33' : '#aa3333'}; 
                         border-radius: 4px; cursor: pointer; font-size: clamp(1rem, 2vmin, 1.5rem);
                         display: flex; align-items: center; justify-content: center;
                         font-family: 'Orbitron', sans-serif;

@@ -24,7 +24,7 @@ export class LibraryStatusModal {
         const currentCount = player.libraryCount || 0;
 
         this.element.innerHTML = `
-            <div class="library-modal-content" style="background: #2a2a2a; padding: 2rem; border-radius: 8px; width: 350px; display: flex; flex-direction: column; gap: 1.5rem; color: white; border: 1px solid #444;">
+            <div class="library-modal-content" style="background: #050a14; padding: 2rem; border-radius: 8px; width: 350px; display: flex; flex-direction: column; gap: 1.5rem; color: white; border: 1px solid cyan; box-shadow: 0 0 20px cyan;">
                 <h3 style="margin: 0; text-align: center;">Library Management</h3>
                 
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
@@ -38,7 +38,7 @@ export class LibraryStatusModal {
                 </div>
 
                 <div style="display: flex; justify-content: center; align-items: center; gap: 1rem;">
-                    <div style="font-size: 3rem; font-weight: bold; font-family: monospace; color: #88ff88;" id="lib-count-display">${currentCount}</div>
+                    <div style="font-size: 3rem; font-weight: bold; font-family: monospace; color: cyan; text-shadow: 0 0 10px cyan;" id="lib-count-display">${currentCount}</div>
                 </div>
 
                 <div style="display: flex; justify-content: center; gap: 0.5rem;">
@@ -56,8 +56,8 @@ export class LibraryStatusModal {
                 </div>
 
                 <button id="btn-close" style="padding: 0.8rem; background: #444; color: white; border: 1px solid #666; cursor: pointer; border-radius: 4px; width: 100%; font-weight: bold;">Close (Apply Log)</button>
-            </div>
-        `;
+            </div >
+            `;
 
         // Event Listeners
         const select = this.element.querySelector('#lib-dest-select');
@@ -125,11 +125,11 @@ export class LibraryStatusModal {
         if (this.logSummary.hand > 0) parts.push(`moved ${this.logSummary.hand} to Hand`);
         if (this.logSummary.grave > 0) parts.push(`milled ${this.logSummary.grave} to Graveyard`);
         if (this.logSummary.exile > 0) parts.push(`exiled ${this.logSummary.exile} from Library`);
-        if (this.logSummary.simple !== 0) parts.push(`adjusted deck by ${this.logSummary.simple > 0 ? '+' : ''}${this.logSummary.simple}`);
+        if (this.logSummary.simple !== 0) parts.push(`adjusted deck by ${this.logSummary.simple > 0 ? '+' : ''}${this.logSummary.simple} `);
 
         if (parts.length > 0) {
             const player = this.store.getState().players.find(p => p.id === this.playerId);
-            const msg = `${player.name} ${parts.join(', ')}. (Deck: ${player.libraryCount})`;
+            const msg = `${player.name} ${parts.join(', ')}.(Deck: ${player.libraryCount})`;
             this.store.dispatch('LOG_ACTION', msg);
         }
 

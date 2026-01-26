@@ -23,13 +23,13 @@ export class SimSearchModal {
 
         const content = document.createElement('div');
         content.style.cssText = `
-            background: #111; width: 80%; height: 80%; border: 1px solid #444; border-radius: 8px;
-            display: flex; flex-direction: column; overflow: hidden;
+            background: #050a14; width: 80%; height: 80%; border: 1px solid cyan; border-radius: 8px;
+            display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 0 20px cyan;
         `;
 
         const destName = this.destination ? (this.destination === 'grave' ? 'Graveyard' : (this.destination === 'hand' ? 'Hand' : 'Exile')) : 'Removal (Void)';
         const header = document.createElement('div');
-        header.innerHTML = `<h3 style="margin:0; padding: 1rem; color:var(--neon-green); background:#222;">Search Deck -> Target: ${destName}</h3>`;
+        header.innerHTML = `<h3 style="margin:0; padding: 1rem; color:cyan; background:#050a14; text-shadow: 0 0 5px cyan;">Search Deck -> Target: ${destName}</h3>`;
         header.style.display = 'flex'; header.style.justifyContent = 'space-between'; header.style.alignItems = 'center';
 
         const closeBtn = document.createElement('button');

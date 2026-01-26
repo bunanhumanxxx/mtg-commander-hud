@@ -24,7 +24,7 @@ export class DiscardSelectModal {
 
         this.element.innerHTML = `
             <div class="modal-content" style="
-                background: #1a1a1a; padding: 2rem; border: 2px solid #f44336; 
+                background: #050a14; padding: 2rem; border: 2px solid #f44336; 
                 border-radius: 8px; width: 90%; max-width: 1000px;
                 display: flex; flex-direction: column; gap: 1rem;
                 max-height: 90vh;

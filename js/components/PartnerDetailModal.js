@@ -54,8 +54,8 @@ export class PartnerDetailModal {
         }
 
         this.element.innerHTML = `
-            <div class="partner-modal-content" style="background: #2a2a2a; padding: 2rem; border-radius: 8px; width: 500px; display: flex; flex-direction: column; gap: 1.5rem; color: white; border: 1px solid #444;">
-                <h3 style="margin: 0; text-align: center;">${title}</h3>
+            <div class="partner-modal-content" style="background: #050a14; padding: 2rem; border-radius: 8px; width: 500px; display: flex; flex-direction: column; gap: 1.5rem; color: white; border: 1px solid cyan; box-shadow: 0 0 20px cyan;">
+                <h3 style="margin: 0; text-align: center; color: cyan; text-shadow: 0 0 10px cyan;">${title}</h3>
                 
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                     ${contentHtml}

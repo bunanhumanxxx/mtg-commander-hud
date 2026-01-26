@@ -53,7 +53,7 @@ export class LifeCounterSetupModal {
 
         this.element.innerHTML += `
             <div class="setup-content" style="
-                background: rgba(10, 15, 20, 0.95); padding: 2rem; border-radius: 10px;
+                background: #050a14; padding: 2rem; border-radius: 10px;
                 border: 1px solid var(--neon-blue); box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
                 width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
                 color: white;

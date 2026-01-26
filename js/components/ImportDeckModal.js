@@ -21,7 +21,7 @@ export class ImportDeckModal {
 
         this.element.innerHTML = `
             <div class="import-modal-content" style="
-                background: rgba(10, 10, 20, 0.95); 
+                background: #050a14; 
                 padding: 2rem; 
                 border-radius: 8px; 
                 width: 600px; 

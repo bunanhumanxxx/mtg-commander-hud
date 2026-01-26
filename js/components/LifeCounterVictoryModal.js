@@ -15,7 +15,7 @@ export class LifeCounterVictoryModal {
 
         this.element.innerHTML = `
             <div class="game-over-content" style="
-                background: rgba(10, 15, 20, 0.95); 
+                background: #050a14; 
                 backdrop-filter: blur(10px);
                 padding: 3rem; 
                 border-radius: 12px; 

@@ -14,21 +14,22 @@ export class DeckBuilderSetupModal {
 
         this.element.innerHTML = `
             <div class="modal-content" style="
-                background: rgba(10, 20, 10, 0.95); 
+                background: #050a14; 
                 padding: 3rem; 
                 border-radius: 12px; 
                 text-align: center; 
                 min-width: 500px; 
-                border: 1px solid var(--neon-green);
-                box-shadow: 0 0 30px rgba(0, 255, 100, 0.2);
+                border: 1px solid cyan;
+                box-shadow: 0 0 20px cyan;
             ">
-                <h2 style="color: var(--neon-green); margin-bottom: 2rem; text-transform: uppercase;">Deck Builder</h2>
+                <h2 style="color: cyan; margin-bottom: 2rem; text-transform: uppercase; text-shadow: 0 0 5px cyan;">Deck Builder</h2>
                 
                 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                     <button id="btn-new-deck" style="
-                        padding: 1rem; background: rgba(0, 255, 100, 0.1); 
-                        border: 1px solid var(--neon-green); color: var(--neon-green); font-size: 1.2rem; cursor: pointer;
+                        padding: 1rem; background: rgba(0, 255, 255, 0.1); 
+                        border: 1px solid cyan; color: cyan; font-size: 1.2rem; cursor: pointer;
                         text-transform: uppercase; font-weight: bold; transition: all 0.2s;
+                        box-shadow: 0 0 5px rgba(0, 255, 255, 0.2);
                     ">[ NEW DECK ]</button>
                     
                     <div style="position: relative;">

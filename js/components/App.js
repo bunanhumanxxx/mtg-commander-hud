@@ -249,7 +249,7 @@ export function renderApp(container, store) {
 
                 // Event Listeners for new buttons
                 sidebar.querySelector('#memo-btn').addEventListener('click', () => {
-                    import('./MemoModal.js').then(({ MemoModal }) => {
+                    import('./MemoModal.js?v=' + Date.now()).then(({ MemoModal }) => {
                         const modal = new MemoModal(store);
                         document.body.appendChild(modal.render());
                     });

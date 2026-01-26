@@ -29,7 +29,7 @@ export function renderCommanderZone(player, store) {
         // Right click context menu (Confirmation to Cast)
         cmdCard.oncontextmenu = (e) => {
             e.preventDefault();
-            import('./ConfirmationModal.js').then(({ ConfirmationModal }) => {
+            import('./ConfirmationModal.js?v=' + Date.now()).then(({ ConfirmationModal }) => {
                 const modal = new ConfirmationModal(
                     '統率者を戦場に出しますか？',
                     () => {

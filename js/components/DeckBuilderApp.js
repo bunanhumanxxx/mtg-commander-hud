@@ -24,6 +24,40 @@ export class DeckBuilderApp {
                 box-shadow: 0 0 20px rgba(0, 255, 100, 0.2);
                 overflow-x: auto; white-space: nowrap; gap: 2rem;
             ">
+                <style>
+                    /* Custom Checkbox */
+                    #check-partner {
+                        appearance: none; -webkit-appearance: none;
+                        width: 16px; height: 16px;
+                        background: #333; /* Dark Gray */
+                        border: 1px solid #555;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        position: relative;
+                        vertical-align: middle;
+                    }
+                    #check-partner:checked {
+                        background: var(--neon-green);
+                        border-color: var(--neon-green);
+                    }
+                    #check-partner:checked::after {
+                        content: '✔';
+                        position: absolute; top: -3px; left: 1px;
+                        font-size: 12px; color: black; font-weight: bold;
+                    }
+                    
+                    /* Header Buttons Hover Effect */
+                    .hud-header-btn {
+                        transition: all 0.2s;
+                        border: 2px solid transparent !important; /* Override inline temporarily */
+                    }
+                    .hud-header-btn:hover {
+                        border-color: cyan !important; /* Cyan Neon border */
+                        box-shadow: 0 0 15px cyan !important;
+                        filter: brightness(1.2);
+                    }
+                </style>    
+
                 <div style="display:flex; align-items:center; gap: 1rem; flex-shrink: 0;">
                     <h2 style="color: var(--neon-green); margin: 0; text-transform: uppercase; font-size: 1.5rem; text-shadow: 0 0 5px var(--neon-green);">Deck Builder</h2>
                     <input type="text" id="deck-name-input" value="My Deck" style="
@@ -39,17 +73,17 @@ export class DeckBuilderApp {
                     <div style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #444;">
                          <span id="card-count" style="color: white; font-family: monospace; font-size: 1.2rem; font-weight: bold;">0 Cards</span>
                     </div>
-                    <button id="btn-hand" style="
+                    <button id="btn-hand" class="hud-header-btn" style="
                         padding: 0.8rem 2rem; background: #9C27B0; border: none;
                         color: white; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 4px;
                         font-size: 1rem; box-shadow: 0 0 10px rgba(156, 39, 176, 0.4);
                     ">HAND</button>
-                    <button id="btn-import" style="
+                    <button id="btn-import" class="hud-header-btn" style="
                         padding: 0.8rem 2rem; background: #2196F3; border: none;
                         color: white; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 4px;
                         font-size: 1rem; box-shadow: 0 0 10px rgba(33, 150, 243, 0.4);
                     ">IMPORT</button>
-                    <button id="btn-save" style="
+                    <button id="btn-save" class="hud-header-btn" style="
                         padding: 0.8rem 2rem; background: var(--neon-green); border: none;
                         color: black; cursor: pointer; text-transform: uppercase; font-weight: bold; border-radius: 4px;
                         font-size: 1rem; box-shadow: 0 0 10px rgba(0,255,100,0.4);

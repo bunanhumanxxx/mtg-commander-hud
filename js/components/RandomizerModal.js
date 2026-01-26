@@ -8,7 +8,7 @@ export class RandomizerModal {
         this.element = document.createElement('div');
         this.element.className = 'modal-overlay';
         this.element.innerHTML = `
-            <div class="modal-content" style="background: rgba(10, 10, 20, 0.95); border: 1px solid var(--neon-blue); box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); backdrop-filter: blur(10px); color: var(--text-color); max-width: 400px; width: 90%; padding: 2rem; border-radius: 8px; text-align: center;">
+            <div class="modal-content" style="background: #050a14; border: 1px solid var(--neon-blue); box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); backdrop-filter: blur(10px); color: var(--text-color); max-width: 400px; width: 90%; padding: 2rem; border-radius: 8px; text-align: center;">
                 <h2 style="margin-bottom: 1.5rem; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); text-transform: uppercase; letter-spacing: 2px;">
                     ${this.type === 'DICE' ? '🎲 DICE ROLL' : '🪙 COIN TOSS'}
                 </h2>

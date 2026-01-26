@@ -21,7 +21,7 @@ export class CounterModal {
 
         this.element.innerHTML = `
             <div class="counter-modal-content" style="
-                background: rgba(10, 10, 20, 0.95); 
+                background: #050a14; 
                 padding: 2rem; 
                 border-radius: 8px; 
                 width: 300px; 
@@ -29,14 +29,14 @@ export class CounterModal {
                 flex-direction: column; 
                 gap: 1rem; 
                 color: white; 
-                border: 1px solid var(--neon-blue); 
-                box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); 
+                border: 1px solid cyan; 
+                box-shadow: 0 0 20px cyan; 
                 backdrop-filter: blur(10px);
             ">
-                <h3 style="margin: 0; text-align: center; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); text-transform: uppercase; letter-spacing: 2px;">${titleText}</h3>
+                <h3 style="margin: 0; text-align: center; color: cyan; text-shadow: 0 0 10px cyan; text-transform: uppercase; letter-spacing: 2px;">${titleText}</h3>
                 
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem; color: var(--neon-blue); font-weight: bold;">Counter Name</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: cyan; font-weight: bold;">Counter Name</label>
                     <input type="text" id="counter-name" value="+1/+1" list="counter-suggestions" style="
                         width: 100%; 
                         padding: 0.5rem; 
@@ -56,7 +56,7 @@ export class CounterModal {
                 </div>
 
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem; color: var(--neon-blue); font-weight: bold;">Amount change</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: cyan; font-weight: bold;">Amount change</label>
                     <input type="number" id="counter-amount" value="1" min="1" style="
                         width: 100%; 
                         padding: 0.5rem; 

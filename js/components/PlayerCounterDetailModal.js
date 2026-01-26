@@ -28,8 +28,8 @@ export class PlayerCounterDetailModal {
         `).join('');
 
         this.element.innerHTML = `
-            <div class="counter-modal-content" style="background: #2a2a2a; padding: 2rem; border-radius: 8px; width: 400px; display: flex; flex-direction: column; gap: 1.5rem; color: white; border: 1px solid #444;">
-                <h3 style="margin: 0; text-align: center;">Player Counters</h3>
+            <div class="counter-modal-content" style="background: #050a14; padding: 2rem; border-radius: 8px; width: 400px; display: flex; flex-direction: column; gap: 1.5rem; color: white; border: 1px solid cyan; box-shadow: 0 0 20px cyan;">
+                <h3 style="margin: 0; text-align: center; color: cyan; text-shadow: 0 0 10px cyan;">Player Counters</h3>
                 
                 <div style="display: flex; flex-direction: column; gap: 1rem; max-height: 60vh; overflow-y: auto;">
                     ${listHtml.length > 0 ? listHtml : '<div style="text-align:center; color:#777;">No Counters</div>'}

@@ -16,12 +16,12 @@ export class TargetSelectModal {
 
         const content = document.createElement('div');
         content.style.cssText = `
-            background: #2a2a2a; padding: 2rem; border-radius: 8px; width: 80%; max-width: 800px;
-            max-height: 80vh; display: flex; flex-direction: column; gap: 1rem; color: white; border: 1px solid #444;
+            background: #050a14; padding: 2rem; border-radius: 8px; width: 80%; max-width: 800px;
+            max-height: 80vh; display: flex; flex-direction: column; gap: 1rem; color: white; border: 1px solid cyan; box-shadow: 0 0 20px cyan;
         `;
 
         content.innerHTML = `
-            <h3 style="margin: 0; text-align: center;">対象を選択 (Select Target)</h3>
+            <h3 style="margin: 0; text-align: center; color: cyan; text-shadow: 0 0 5px cyan;">対象を選択 (Select Target)</h3>
             <div class="target-list" style="
                 display: flex; flex-wrap: wrap; gap: 1rem; overflow-y: auto; padding: 1rem;
                 justify-content: center; background: #222; border-radius: 4px; min-height: 200px;

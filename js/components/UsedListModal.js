@@ -47,19 +47,32 @@ export class UsedListModal {
         }).join('');
 
         this.element.innerHTML = `
-            <div class="hud-used-modal">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,243,255,0.3); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
-                    <h3 style="margin: 0; color: var(--neon-blue); text-transform: uppercase;">${title} (${targetList.length})</h3>
+            <div class="hud-used-modal" style="
+                background: #050a14;
+                padding: 1rem;
+                border-radius: 8px;
+                width: 90%;
+                max-width: 600px;
+                display: flex;
+                flex-direction: column;
+                max-height: 80vh;
+                border: 1px solid cyan;
+                box-shadow: 0 0 20px cyan;
+                color: white;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid cyan; padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; color: cyan; text-transform: uppercase; text-shadow: 0 0 5px cyan;">${title} (${targetList.length})</h3>
                     <button class="close-btn" style="
                         background: transparent; 
-                        border: 1px solid #555; 
-                        color: #ccc; 
+                        border: 1px solid cyan; 
+                        color: cyan; 
                         cursor: pointer; 
                         padding: 0.2rem 0.6rem; 
                         border-radius: 4px;
+                        box-shadow: 0 0 5px cyan;
                     ">X</button>
                 </div>
-                <div class="hud-used-list-container">
+                <div class="hud-used-list-container" style="overflow-y: auto; flex: 1;">
                     ${targetList.length > 0 ? listHtml : '<div style="padding: 1rem; text-align: center; color: #666;">Empty</div>'}
                 </div>
             </div>
