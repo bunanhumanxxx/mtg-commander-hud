@@ -328,8 +328,21 @@ export class HandSimulatorModal {
             e.stopPropagation();
             this._hideCtxMenu();
 
-            // Check if any selected card is a Commander
             const state = this.store.getState();
+            // Check Game Mode
+            if (state.settings.gameMode === 'deck_builder') {
+                // Deck Builder Mode: Just remove from hand (Void)
+                this.store.dispatch('MOVE_SIM_CARDS', {
+                    playerId: this.playerId,
+                    cardIds: Array.from(this.selectedCardIds),
+                    destination: 'void' // Unknown destination triggers deletion in store logic
+                });
+                this.selectedCardIds.clear();
+                this._update();
+                return;
+            }
+
+            // Full System / Other Modes: Show Zone Select Modal
             const zone = state.zones[this.playerId];
             const hasCommander = zone?.simHand?.some(c => this.selectedCardIds.has(c.instanceId) && c.isCommander);
 
