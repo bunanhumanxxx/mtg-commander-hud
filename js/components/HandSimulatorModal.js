@@ -310,7 +310,7 @@ export class HandSimulatorModal {
                     return false;
                 };
             } else {
-                el.title = 'Click to Preview';
+                el.title = 'Click to Preview / Right Click to Move';
                 el.style.border = '1px solid #444';
                 // Click to Preview
                 el.onclick = (e) => {
@@ -320,9 +320,16 @@ export class HandSimulatorModal {
                         document.body.appendChild(modal.render());
                     });
                 };
+                // Right Click to Move (Single Item)
                 el.oncontextmenu = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+
+                    // Select strictly this card for the action
+                    this.selectedCardIds.clear();
+                    this.selectedCardIds.add(card.instanceId);
+
+                    this._showCtxMenu(e.clientX, e.clientY);
                     return false;
                 };
             }
