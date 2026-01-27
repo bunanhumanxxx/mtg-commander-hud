@@ -10,6 +10,18 @@ export function renderCard(card, store, playerId) {
     cardDiv.style.backgroundSize = 'cover';
     cardDiv.style.backgroundPosition = 'center';
 
+    // Drag & Drop Support
+    const gameMode = store.getState().settings.gameMode;
+    if (gameMode === 'full') { // Corrected from 'full_system'
+        cardDiv.setAttribute('draggable', 'true');
+        cardDiv.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', card.instanceId);
+            e.dataTransfer.effectAllowed = 'move';
+            // Optional: Customize drag image if needed
+            // e.dataTransfer.setDragImage(cardDiv, 0, 0);
+        });
+    }
+
     // Selection Visuals
     const isSelected = store.getState().ui.selectedIds.includes(card.instanceId);
     if (isSelected) {

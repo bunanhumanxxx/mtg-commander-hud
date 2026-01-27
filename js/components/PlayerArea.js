@@ -381,8 +381,26 @@ export function renderPlayerArea(player, store, isActive) {
         });
     });
 
+    // Hand Drop Target
+    const handDisplay = header.querySelector('.hand-display');
+    handDisplay.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        handDisplay.classList.add('drag-hover');
+    });
+    handDisplay.addEventListener('dragleave', () => {
+        handDisplay.classList.remove('drag-hover');
+    });
+    handDisplay.addEventListener('drop', (e) => {
+        e.preventDefault();
+        handDisplay.classList.remove('drag-hover');
+        const cardId = e.dataTransfer.getData('text/plain');
+        if (cardId) {
+            store.dispatch('MOVE_CARD', { cardId, sourceZone: 'battlefield', destination: 'hand', playerId: player.id });
+        }
+    });
+
     // Hand Click Event
-    header.querySelector('.hand-display').addEventListener('click', () => {
+    handDisplay.addEventListener('click', () => {
         const pZone = store.getState().zones[player.id];
         const hasDeck = pZone.library && pZone.library.length > 0;
 
@@ -399,8 +417,26 @@ export function renderPlayerArea(player, store, isActive) {
         }
     });
 
+    // Library Drop Target
+    const libraryDisplay = header.querySelector('.library-display');
+    libraryDisplay.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        libraryDisplay.classList.add('drag-hover');
+    });
+    libraryDisplay.addEventListener('dragleave', () => {
+        libraryDisplay.classList.remove('drag-hover');
+    });
+    libraryDisplay.addEventListener('drop', (e) => {
+        e.preventDefault();
+        libraryDisplay.classList.remove('drag-hover');
+        const cardId = e.dataTransfer.getData('text/plain');
+        if (cardId) {
+            store.dispatch('MOVE_CARD', { cardId, sourceZone: 'battlefield', destination: 'library', playerId: player.id });
+        }
+    });
+
     // Library Click Event
-    header.querySelector('.library-display').addEventListener('click', () => {
+    libraryDisplay.addEventListener('click', () => {
         import('./LibraryStatusModal.js?v=' + Date.now()).then(({ LibraryStatusModal }) => {
             const modal = new LibraryStatusModal(store, player.id);
             document.body.appendChild(modal.render());
@@ -524,6 +560,24 @@ export function renderPlayerArea(player, store, isActive) {
     usedZone.className = 'zone-slot zone-grave';
     usedZone.title = 'Graveyard';
 
+    // Drop Handler for Graveyard
+    usedZone.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Allow drop
+        usedZone.classList.add('drag-hover');
+        e.dataTransfer.dropEffect = 'move';
+    });
+    usedZone.addEventListener('dragleave', () => {
+        usedZone.classList.remove('drag-hover');
+    });
+    usedZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        usedZone.classList.remove('drag-hover');
+        const cardId = e.dataTransfer.getData('text/plain');
+        if (cardId) {
+            store.dispatch('MOVE_CARD', { cardId, sourceZone: 'battlefield', destination: 'grave', playerId: player.id });
+        }
+    });
+
     const usedCards = store.getState().zones[player.id].grave || [];
     const topUsed = usedCards.length > 0 ? usedCards[usedCards.length - 1] : null;
 
@@ -558,6 +612,24 @@ export function renderPlayerArea(player, store, isActive) {
     const exileZone = document.createElement('div');
     exileZone.className = 'zone-slot zone-exile';
     exileZone.title = 'Exile Area';
+
+    // Drop Handler for Exile
+    exileZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        exileZone.classList.add('drag-hover');
+        e.dataTransfer.dropEffect = 'move';
+    });
+    exileZone.addEventListener('dragleave', () => {
+        exileZone.classList.remove('drag-hover');
+    });
+    exileZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        exileZone.classList.remove('drag-hover');
+        const cardId = e.dataTransfer.getData('text/plain');
+        if (cardId) {
+            store.dispatch('MOVE_CARD', { cardId, sourceZone: 'battlefield', destination: 'exile', playerId: player.id });
+        }
+    });
 
     // Vortex Animation
     const vortex = document.createElement('div');

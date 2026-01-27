@@ -1875,3 +1875,19 @@ button:hover {
         background: rgba(0, 0, 0, 0.9);
     }
 }
+/* Drag and Drop Visual Feedback */
+.drag-hover {
+    filter: invert(1) !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8) !important;
+    border: 2px solid var(--neon-blue) !important;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Card Draggable Cursor */
+.card-on-board[draggable='true'] {
+    cursor: grab;
+}
+.card-on-board[draggable='true']:active {
+    cursor: grabbing;
+}
