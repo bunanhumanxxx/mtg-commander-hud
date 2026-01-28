@@ -178,9 +178,24 @@ export class Store {
             case 'MOVE_SIM_CARDS':
                 this._moveSimCards(payload);
                 break;
+            case 'UPDATE_COMMANDER_TAX':
+                this._updateCommanderTax(payload);
+                break;
             // Add more actions as needed
         }
 
+        this.notify();
+    }
+
+    _updateCommanderTax({ playerId, commanderIndex, amount }) {
+        const player = this.state.players.find(p => p.id === playerId);
+        if (!player || !player.commanders[commanderIndex]) return;
+
+        const cmd = player.commanders[commanderIndex];
+        // Ensure tax doesn't go below 0
+        cmd.commanderTax = Math.max(0, (cmd.commanderTax || 0) + amount);
+
+        this._log(`${player.name} updated Commander Tax (CMD ${commanderIndex + 1}) to ${cmd.commanderTax}.`);
         this.notify();
     }
 

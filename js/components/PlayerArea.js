@@ -531,13 +531,21 @@ export function renderPlayerArea(player, store, isActive) {
             try {
                 const data = JSON.parse(raw);
                 if (data.playerId === player.id) {
-                    // Check if it IS a move to battlefield (generic)
-                    store.dispatch('MOVE_CARD', {
-                        playerId: player.id,
-                        cardId: data.cardId,
-                        destination: 'battlefield',
-                        sourceZone: data.sourceZone
-                    });
+                    // Check if it's a Commander Cast (from Command Zone)
+                    if (data.sourceZone === 'command' && data.isCommander) {
+                        store.dispatch('CAST_COMMANDER', {
+                            playerId: player.id,
+                            cardId: data.cardId
+                        });
+                    } else {
+                        // Generic Move (Battlefield reorder, etc.)
+                        store.dispatch('MOVE_CARD', {
+                            playerId: player.id,
+                            cardId: data.cardId,
+                            destination: 'battlefield',
+                            sourceZone: data.sourceZone
+                        });
+                    }
                 }
             } catch (err) {
                 console.error('BF Drop parse error:', err);

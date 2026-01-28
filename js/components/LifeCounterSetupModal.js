@@ -7,6 +7,7 @@ export class LifeCounterSetupModal {
             startingLife: 40,
             players: []
         };
+        this.manualOrder = false;
     }
 
     render() {
@@ -84,6 +85,12 @@ export class LifeCounterSetupModal {
                     </div>
                 </div>
 
+                <!-- Manual Order Toggle -->
+                <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <input type="checkbox" id="manual-order-check" class="partner-check">
+                    <label for="manual-order-check" style="cursor:pointer; color: #ccc;">Manual Turn Order</label>
+                </div>
+
                 <!-- Player Details -->
                 <div id="player-config-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 2rem;">
                     <!-- Injected via JS -->
@@ -124,6 +131,13 @@ export class LifeCounterSetupModal {
             };
         });
 
+        // Manual Order Toggle Logic
+        const manualCheck = this.element.querySelector('#manual-order-check');
+        manualCheck.onchange = (e) => {
+            this.manualOrder = e.target.checked;
+            this._renderPlayerInputs();
+        };
+
         // Count Buttons
         const countBtns = this.element.querySelectorAll('.count-btn');
         countBtns.forEach(btn => {
@@ -146,22 +160,52 @@ export class LifeCounterSetupModal {
             // Harvest Names and Partner Status
             const inputs = this.element.querySelectorAll('.player-row');
             const players = [];
+            const orders = new Set();
+            let hasError = false;
+
             inputs.forEach((row, index) => {
                 const nameInput = row.querySelector('.player-name-input');
                 const partnerCheck = row.querySelector('.partner-check');
-                players.push({
+
+                const pData = {
                     name: nameInput.value || `Player ${index + 1}`,
                     life: this.settings.startingLife,
                     isPartner: partnerCheck.checked,
                     // Simple commander stubs for logic compatibility if needed
                     commanders: partnerCheck.checked ? [{ id: 'c1' }, { id: 'c2' }] : [{ id: 'c1' }]
-                });
+                };
+
+                if (this.manualOrder) {
+                    const orderSelect = row.querySelector('.order-select');
+                    const orderVal = parseInt(orderSelect.value);
+
+                    if (isNaN(orderVal)) {
+                        hasError = true;
+                        orderSelect.style.border = '1px solid red';
+                    } else if (orders.has(orderVal)) {
+                        hasError = true;
+                        orderSelect.style.border = '1px solid red';
+                    }
+                    orders.add(orderVal);
+                    pData.order = orderVal;
+                }
+
+                players.push(pData);
             });
+
+            if (this.manualOrder && hasError) {
+                alert('Invalid turn order options. Please ensure all players have a unique order selected.');
+                return;
+            }
+
+            if (this.manualOrder) {
+                players.sort((a, b) => a.order - b.order);
+            }
 
             this.store.dispatch('INIT_GAME', {
                 players: players,
                 options: {
-                    randomizeTurnOrder: true,
+                    randomizeTurnOrder: !this.manualOrder,
                     gameMode: 'life_counter'
                 }
             });
@@ -185,8 +229,25 @@ export class LifeCounterSetupModal {
                 display: flex; align-items: center; gap: 10px;
                 background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px;
             `;
+
+            let orderHtml = '';
+            if (this.manualOrder) {
+                // Initial render with placeholder
+                orderHtml = `
+                    <select class="order-select" style="
+                        background: #333; color: white; border: 1px solid #555; 
+                        padding: 5px; border-radius: 4px; margin-right: 5px; cursor: pointer;
+                    ">
+                        <option value="" selected>Select</option>
+                        ${Array.from({ length: this.settings.playerCount }, (_, k) => `<option value="${k + 1}">${k + 1}${this._getOrdinal(k + 1)}</option>`).join('')}
+                    </select>
+                `;
+            } else {
+                orderHtml = `<span style="color: #666; font-weight: bold; width: 20px;">${i + 1}</span>`;
+            }
+
             row.innerHTML = `
-                <span style="color: #666; font-weight: bold; width: 20px;">${i + 1}</span>
+                ${orderHtml}
                 <input type="text" class="player-name-input" placeholder="Player ${i + 1}" style="
                     flex: 1; background: transparent; border: none; 
                     border-bottom: 1px solid #444; color: white; padding: 5px;
@@ -198,6 +259,43 @@ export class LifeCounterSetupModal {
             `;
             list.appendChild(row);
         }
+
+        if (this.manualOrder) {
+            const selects = list.querySelectorAll('.order-select');
+            selects.forEach(sel => {
+                sel.onchange = () => this._updateOrderOptions(selects);
+            });
+            this._updateOrderOptions(selects);
+        }
+    }
+
+    _updateOrderOptions(selects) {
+        const selectedValues = new Set();
+        selects.forEach(s => {
+            if (s.value) selectedValues.add(s.value);
+            s.style.borderColor = '#555'; // Reset border
+        });
+
+        selects.forEach(s => {
+            const currentVal = s.value;
+            Array.from(s.options).forEach(opt => {
+                if (!opt.value) return; // Skip placeholder
+                if (selectedValues.has(opt.value) && opt.value !== currentVal) {
+                    opt.disabled = true;
+                    opt.style.color = '#555';
+                } else {
+                    opt.disabled = false;
+                    opt.style.color = 'white';
+                }
+            });
+        });
+    }
+
+
+    _getOrdinal(n) {
+        const s = ["th", "st", "nd", "rd"];
+        const v = n % 100;
+        return s[(v - 20) % 10] || s[v] || s[0];
     }
 
     _setActive(btn) {

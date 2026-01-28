@@ -204,9 +204,14 @@ export class HandSimulatorModal {
         document.body.appendChild(modal);
     }
 
+
+
+
+
     _bindEvents() {
         this.element.querySelector('#btn-close').onclick = () => this.close();
 
+        // ... (Existing buttons)
         this.element.querySelector('#btn-start').onclick = () => {
             if (confirm('Reset deck and draw new hand?')) {
                 this.store.dispatch('TEST_INIT_HAND', { playerId: this.playerId });
@@ -241,6 +246,75 @@ export class HandSimulatorModal {
             }
             this._update();
         };
+
+        // DROP ZONE LOGIC (Global Overlay)
+        this.element.addEventListener('dragenter', (e) => {
+            if (e.target === this.element) this.element.classList.add('active-drop-zone');
+        });
+
+        this.element.addEventListener('dragleave', (e) => {
+            if (e.target === this.element) this.element.classList.remove('active-drop-zone');
+        });
+
+        this.element.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (e.target === this.element) {
+                e.dataTransfer.dropEffect = 'move';
+                if (!this.element.classList.contains('active-drop-zone')) {
+                    this.element.classList.add('active-drop-zone');
+                }
+            } else {
+                e.dataTransfer.dropEffect = 'none';
+                this.element.classList.remove('active-drop-zone');
+            }
+        });
+
+        this.element.addEventListener('drop', (e) => {
+            e.preventDefault();
+            this.element.classList.remove('active-drop-zone');
+
+            if (e.target === this.element) {
+                try {
+                    const raw = e.dataTransfer.getData('application/json');
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        if (data.sourceZone === 'sim_hand' && data.playerId === this.playerId) {
+                            const cardId = data.cardId;
+
+                            // Logic Branch
+                            const state = this.store.getState();
+                            if (state.settings.gameMode === 'deck_builder') {
+                                // Deck Builder: Remove (Void)
+                                this.store.dispatch('MOVE_SIM_CARDS', {
+                                    playerId: this.playerId,
+                                    cardIds: [cardId],
+                                    destination: 'void'
+                                });
+                                this._update();
+                            } else {
+                                // Full System: Zone Select
+                                const zone = state.zones[this.playerId];
+                                const card = zone?.simHand?.find(c => c.instanceId === cardId);
+                                if (card) {
+                                    import('./ZoneSelectModal.js?v=' + Date.now()).then(({ ZoneSelectModal }) => {
+                                        const modal = new ZoneSelectModal(card.name, (dest) => {
+                                            this.store.dispatch('MOVE_SIM_CARDS', {
+                                                playerId: this.playerId,
+                                                cardIds: [cardId],
+                                                destination: dest
+                                            });
+                                            this._update();
+                                        }, () => { }, { isCommander: card.isCommander });
+                                        document.body.appendChild(modal.render());
+                                    });
+                                }
+                            }
+                        }
+                    }
+                } catch (err) { console.error('Sim Drop Error:', err); }
+            }
+        });
+
     }
 
     _update() {
@@ -279,7 +353,6 @@ export class HandSimulatorModal {
 
             if (this.useMode) {
                 // Selection Logic
-                // Selection Logic
                 if (this.selectedCardIds.has(card.instanceId)) {
                     el.style.border = '3px solid #f44336';
                     el.style.transform = 'scale(1.05)';
@@ -310,7 +383,7 @@ export class HandSimulatorModal {
                     return false;
                 };
             } else {
-                el.title = 'Click to Preview / Right Click to Move';
+                el.title = 'Click to Preview / Right Click to Move / Drag to Move';
                 el.style.border = '1px solid #444';
                 // Click to Preview
                 el.onclick = (e) => {
@@ -331,6 +404,23 @@ export class HandSimulatorModal {
 
                     this._showCtxMenu(e.clientX, e.clientY);
                     return false;
+                };
+
+                // DRAG START
+                el.draggable = true;
+                el.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', card.instanceId);
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                        cardId: card.instanceId,
+                        sourceZone: 'sim_hand',
+                        playerId: this.playerId,
+                        isCommander: !!card.isCommander
+                    }));
+                    e.dataTransfer.effectAllowed = 'move';
+                    el.style.opacity = '0.5';
+                };
+                el.ondragend = () => {
+                    el.style.opacity = '1';
                 };
             }
 

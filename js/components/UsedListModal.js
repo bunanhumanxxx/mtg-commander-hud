@@ -36,7 +36,7 @@ export class UsedListModal {
                 : `<div style="width: 36px; height: 50px; background: #222; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; text-align: center; border: 1px dashed #555; color: #888;">?</div>`;
 
             return `
-            <div class="hud-used-card-item used-card-item" data-index="${index}">
+            <div class="hud-used-card-item used-card-item" data-index="${index}" draggable="true">
                 ${imgHtml}
                 <div>
                     <div class="card-name">${c.name}</div>
@@ -94,6 +94,28 @@ export class UsedListModal {
                 }
             });
 
+            // Drag Start Delegation
+            listContainer.addEventListener('dragstart', (e) => {
+                const item = e.target.closest('.used-card-item');
+                if (item) {
+                    const idx = parseInt(item.dataset.index);
+                    const card = displayCards[idx];
+
+                    e.dataTransfer.setData('text/plain', card.instanceId || card.id);
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                        cardId: card.instanceId || card.id,
+                        sourceZone: this.zoneType,
+                        playerId: this.playerId,
+                        isCommander: !!card.isCommander
+                    }));
+                    e.dataTransfer.effectAllowed = 'move';
+                    item.style.opacity = '0.5';
+
+                    // Restore opacity on dragend (add listener here or rely on CSS/re-render? Best to add listener)
+                    item.addEventListener('dragend', () => item.style.opacity = '1', { once: true });
+                }
+            });
+
             listContainer.addEventListener('contextmenu', (e) => {
                 const item = e.target.closest('.used-card-item');
                 if (item) {
@@ -109,8 +131,69 @@ export class UsedListModal {
                     });
                 }
             });
-            // Removed JS mouseover/mouseout listeners as they are handled by CSS
         }
+
+        // Drop on Overlay (Outside Popup) Logic
+        this.element.addEventListener('dragenter', (e) => {
+            if (e.target === this.element) this.element.classList.add('active-drop-zone');
+        });
+
+        this.element.addEventListener('dragleave', (e) => {
+            if (e.target === this.element) this.element.classList.remove('active-drop-zone');
+        });
+
+        this.element.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (e.target === this.element) {
+                e.dataTransfer.dropEffect = 'move';
+                if (!this.element.classList.contains('active-drop-zone')) {
+                    this.element.classList.add('active-drop-zone');
+                }
+            } else {
+                e.dataTransfer.dropEffect = 'none';
+                this.element.classList.remove('active-drop-zone');
+            }
+        });
+
+        this.element.addEventListener('drop', (e) => {
+            e.preventDefault();
+            this.element.classList.remove('active-drop-zone');
+            // Trigger ONLY if dropped on the background overlay (this.element)
+            if (e.target === this.element) {
+                try {
+                    const raw = e.dataTransfer.getData('application/json');
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        // Check if it's from current list to avoid weird cross-window drags triggering this specific modal
+                        if (data.sourceZone === this.zoneType && data.playerId === this.playerId) {
+
+                            // Find card object
+                            const card = targetList.find(c => (c.instanceId || c.id) === data.cardId);
+                            if (card) {
+                                this.close(); // Close this modal
+
+                                import('./ZoneSelectModal.js').then(({ ZoneSelectModal }) => {
+                                    const modal = new ZoneSelectModal(
+                                        card.name,
+                                        (destination) => {
+                                            this.store.dispatch('MOVE_CARD', {
+                                                playerId: this.playerId,
+                                                cardId: card.instanceId || card.id,
+                                                destination: destination,
+                                                sourceZone: this.zoneType
+                                            });
+                                        },
+                                        () => { },
+                                        { isCommander: card.isCommander }
+                                    );
+                                    document.body.appendChild(modal.render());
+                                });
+                            }
+                        }
+                    }
+                } catch (err) { console.error('Drop error in UsedList:', err); }
+            }
+        });
 
         this.element.onclick = (e) => {
             if (e.target === this.element) this.close();

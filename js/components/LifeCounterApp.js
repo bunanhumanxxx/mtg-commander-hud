@@ -114,6 +114,15 @@ export class LifeCounterApp {
             // Update CMD Damage List
             if (!player.eliminated) {
                 this._updateCmdList(player, state, refs.cmdContainer);
+
+                // Update Commander Tax
+                if (player.commanders && refs.taxEls && refs.taxEls.length > 0) {
+                    player.commanders.forEach((cmd, idx) => {
+                        if (refs.taxEls[idx]) {
+                            refs.taxEls[idx].textContent = cmd.commanderTax || 0;
+                        }
+                    });
+                }
             }
         });
     }
@@ -137,7 +146,7 @@ export class LifeCounterApp {
             box-shadow: 0 0 10px rgba(0, 100, 100, 0.1), inset 0 0 20px rgba(0, 10, 20, 0.8);
         `;
 
-        this.refs.players[player.id] = { panel: div };
+        this.refs.players[player.id] = { panel: div, taxEls: [] };
 
         if (isEliminated) {
             div.classList.add('eliminated');
@@ -245,6 +254,72 @@ export class LifeCounterApp {
         topSection.appendChild(lifeEl);
         topSection.appendChild(btnsDiv);
 
+        topSection.appendChild(btnsDiv);
+
+        // --- COMMANDER TAX (Compact Top-Left) ---
+        if (player.commanders && player.commanders.length > 0) {
+            const taxContainer = document.createElement('div');
+            taxContainer.style.cssText = `
+                position: absolute; top: 0; left: 0; 
+                display: flex; flex-direction: column; gap: 4px;
+                padding: 6px 8px; z-index: 10;
+                background: rgba(0, 0, 0, 0.85); 
+                border-bottom-right-radius: 8px;
+                border-right: 1px solid var(--neon-blue);
+                border-bottom: 1px solid var(--neon-blue);
+                box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+            `;
+
+            player.commanders.forEach((cmd, idx) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display: flex; align-items: center; gap: 6px;';
+
+                // Label (Icon or Short Text)
+                const label = document.createElement('span');
+                label.textContent = `T${idx + 1}`;
+                label.title = `Commander Tax (CMD ${idx + 1})`;
+                label.style.cssText = 'font-size: 0.8rem; color: var(--neon-blue); font-family: "Orbitron", sans-serif; min-width: 20px; font-weight: bold; text-shadow: 0 0 5px var(--neon-blue);';
+
+                // Value
+                const valDisplay = document.createElement('span');
+                valDisplay.textContent = cmd.commanderTax || 0;
+                valDisplay.style.cssText = 'font-family: "Orbitron", monospace; font-size: 1.1rem; font-weight: bold; color: white; min-width: 1.5em; text-align: center; text-shadow: 0 0 5px white;';
+
+                // Store Ref
+                this.refs.players[player.id].taxEls.push(valDisplay);
+
+                const createTaxBtn = (amt, text) => {
+                    const btn = document.createElement('button');
+                    btn.textContent = text;
+                    btn.style.cssText = `
+                        background: rgba(255, 255, 255, 0.1); border: 1px solid #666; color: #eee;
+                        cursor: pointer; font-size: 0.9rem; padding: 0; border-radius: 4px;
+                        font-family: monospace; display: flex; align-items: center; justify-content: center;
+                        height: 24px; min-width: 24px; font-weight: bold;
+                        transition: all 0.2s;
+                    `;
+                    btn.onmouseover = () => { btn.style.borderColor = 'white'; btn.style.background = 'rgba(255, 255, 255, 0.3)'; btn.style.boxShadow = '0 0 5px white'; };
+                    btn.onmouseout = () => { btn.style.borderColor = '#666'; btn.style.background = 'rgba(255, 255, 255, 0.1)'; btn.style.boxShadow = 'none'; };
+                    btn.onclick = () => {
+                        this.store.dispatch('UPDATE_COMMANDER_TAX', {
+                            playerId: player.id,
+                            commanderIndex: idx,
+                            amount: amt
+                        });
+                    };
+                    return btn;
+                };
+
+                row.appendChild(label);
+                row.appendChild(createTaxBtn(-2, '-'));
+                row.appendChild(valDisplay);
+                row.appendChild(createTaxBtn(2, '+'));
+                taxContainer.appendChild(row);
+            });
+            div.appendChild(taxContainer);
+        }
+
         // Bottom Section (CMD List)
         const btmSection = document.createElement('div');
         btmSection.style.cssText = `
@@ -258,6 +333,7 @@ export class LifeCounterApp {
         this._updateCmdList(player, state, btmSection);
 
         div.appendChild(topSection);
+
         div.appendChild(btmSection);
         return div;
     }
