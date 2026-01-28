@@ -670,7 +670,7 @@ button:hover {
     flex-wrap: wrap;
     gap: 5px;
     z-index: 10;
-    pointer-events: none;
+    pointer-events: auto;
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     position: relative;
     overflow: hidden;
@@ -786,16 +786,19 @@ button:hover {
 }
 
 .commander-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 10px gold;
+    /* transform: scale(1.05); Removed to prevent overlapping/clutter */
+    /* box-shadow: 0 0 10px gold; Old glow */
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.6), inset 0 0 5px rgba(255, 215, 0, 0.4);
+    border: 1px solid rgba(255, 215, 0, 0.8);
     z-index: 20;
+    filter: brightness(1.1);
 }
 
 /* Card Selection Animation */
 .card-on-board.selected {
     border-color: var(--neon-blue) !important;
-    box-shadow: 0 0 10px var(--neon-blue), inset 0 0 5px var(--neon-blue);
-    transform: scale(1.05);
+    box-shadow: 0 0 5px var(--neon-blue), inset 0 0 5px var(--neon-blue);
+    /* transform: scale(1.05); Removed */
     z-index: 20;
     animation: selection-pulse 2s infinite ease-in-out;
 }
@@ -810,7 +813,7 @@ button:hover {
     }
 
     50% {
-        box-shadow: 0 0 15px var(--neon-blue), inset 0 0 10px var(--neon-blue);
+        box-shadow: 0 0 10px var(--neon-blue), inset 0 0 8px var(--neon-blue);
         filter: brightness(1.2);
     }
 
@@ -842,21 +845,21 @@ button:hover {
 }
 
 /* Hover Animation */
-/* Hover Animation */
 .card-on-board:hover {
-    transform: scale(1.08);
+    /* transform: scale(1.08); Removed */
     /* Pop up (Reduced) */
     z-index: 100;
     /* Bring to front */
-    box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+    box-shadow: 0 0 5px rgba(0, 243, 255, 0.6), inset 0 0 5px rgba(0, 243, 255, 0.4);
     /* Cyber glow */
-    border-color: rgba(0, 243, 255, 0.8);
+    border-color: rgba(0, 243, 255, 0.9);
     filter: brightness(1.1);
 }
 
 /* Hover on Tapped Card (Maintain Rotation) */
 .card-on-board.tapped:hover {
-    transform: rotate(90deg) scale(1.08);
+    transform: rotate(90deg);
+    /* No scale */
 }
 
 /* Battlefield Zones Layout */
@@ -1875,11 +1878,14 @@ button:hover {
         background: rgba(0, 0, 0, 0.9);
     }
 }
+
+/* Drag and Drop Visual Feedback */
 /* Drag and Drop Visual Feedback */
 .drag-hover {
-    filter: invert(1) !important;
-    transform: scale(1.1) !important;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8) !important;
+    /* filter: invert(1) !important; Removed */
+    /* transform: scale(1.1) !important; Removed */
+    background: rgba(0, 243, 255, 0.1) !important;
+    box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.2) !important;
     border: 2px solid var(--neon-blue) !important;
     transition: all 0.2s ease-in-out;
 }
@@ -1888,6 +1894,7 @@ button:hover {
 .card-on-board[draggable='true'] {
     cursor: grab;
 }
+
 .card-on-board[draggable='true']:active {
     cursor: grabbing;
 }

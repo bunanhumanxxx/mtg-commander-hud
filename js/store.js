@@ -495,6 +495,7 @@ export class Store {
                     }
 
                     if (destination === 'battlefield') {
+                        if (!card.instanceId) card.instanceId = generateId(); // Ensure instanceId for new permanents (e.g. Dragged Commander)
                         card.tapped = false;
                         delete card.commanderStatus;
                     }

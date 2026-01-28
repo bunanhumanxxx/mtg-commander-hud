@@ -512,6 +512,59 @@ export function renderPlayerArea(player, store, isActive) {
     mainCol.className = 'main-col';
     mainCol.style.cssText = 'flex: 1; display: flex; flex-direction: column; overflow: hidden;'; // Border right removed
 
+    // Drop Handler for Battlefield (Accepts Moves)
+    mainCol.ondragover = (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        mainCol.classList.add('drag-hover');
+    };
+    mainCol.ondragleave = () => {
+        mainCol.classList.remove('drag-hover');
+    };
+    mainCol.ondrop = (e) => {
+        e.preventDefault();
+        mainCol.classList.remove('drag-hover');
+
+        // 1. Check for JSON data (New Format)
+        const raw = e.dataTransfer.getData('application/json');
+        if (raw) {
+            try {
+                const data = JSON.parse(raw);
+                if (data.playerId === player.id) {
+                    // Check if it IS a move to battlefield (generic)
+                    store.dispatch('MOVE_CARD', {
+                        playerId: player.id,
+                        cardId: data.cardId,
+                        destination: 'battlefield',
+                        sourceZone: data.sourceZone
+                    });
+                }
+            } catch (err) {
+                console.error('BF Drop parse error:', err);
+            }
+            return;
+        }
+
+        // 2. Fallback to text/plain (Legacy or other components)
+        const cardId = e.dataTransfer.getData('text/plain');
+        if (cardId) {
+            store.dispatch('MOVE_CARD', {
+                cardId,
+                sourceZone: 'hand', // Assume 'hand' if from standard drag (Card->dragstart defaults?)
+                // Actually, Card.js dragstart sets text/plain to cardId.
+                // We need to know source. If we assume 'hand' it might be wrong if dragging between zones?
+                // Existing HandSimulator sets source? 
+                // Let's rely on JSON if possible. If simple Card drag, likely from Hand or internal reorder (not implemented).
+                // Safest is to try find it or default to 'hand' if implicit.
+                // But wait, if I drag from Commander with my new code, it HAS JSON.
+                // This fallback probably catches Card.js drags.
+                // Let's assume Card.js drags are from Hand or Battlefield.
+                destination: 'battlefield',
+                playerId: player.id
+            });
+        }
+    };
+
     // Upper Zone (Creatures, Artifacts, Enchantments)
     const upperZone = document.createElement('div');
     upperZone.className = 'zone-upper';

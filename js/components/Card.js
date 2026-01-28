@@ -16,6 +16,15 @@ export function renderCard(card, store, playerId) {
         cardDiv.setAttribute('draggable', 'true');
         cardDiv.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', card.instanceId);
+
+            // NEW: Add JSON data for Commander Zone drop compatibility
+            e.dataTransfer.setData('application/json', JSON.stringify({
+                cardId: card.instanceId,
+                sourceZone: 'battlefield', // Default assumption for Card.js
+                playerId: playerId,
+                isCommander: !!card.isCommander
+            }));
+
             e.dataTransfer.effectAllowed = 'move';
             // Optional: Customize drag image if needed
             // e.dataTransfer.setDragImage(cardDiv, 0, 0);

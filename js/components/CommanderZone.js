@@ -26,6 +26,29 @@ export function renderCommanderZone(player, store) {
             position: relative;
         `;
 
+        // Drag Start
+        cmdCard.draggable = true;
+        cmdCard.ondragstart = (e) => {
+            e.dataTransfer.setData('text/plain', cmd.id); // For existing simplified logic if any
+            e.dataTransfer.setData('application/json', JSON.stringify({
+                cardId: cmd.id,
+                sourceZone: 'command',
+                playerId: player.id,
+                isCommander: true
+            }));
+            e.dataTransfer.effectAllowed = 'move';
+
+            // Visual feedback
+            cmdCard.style.opacity = '0.5';
+            setTimeout(() => cmdCard.style.opacity = '1', 0); // Reset immediately but keep ghost? Or keep it dim?
+            // Usually standard HTML5 drag keeps the element visible but creates a ghost.
+            // If we dim it, we should restore it on dragend.
+        };
+
+        cmdCard.ondragend = () => {
+            cmdCard.style.opacity = '1';
+        };
+
         // Right click context menu (Confirmation to Cast)
         cmdCard.oncontextmenu = (e) => {
             e.preventDefault();
@@ -54,6 +77,63 @@ export function renderCommanderZone(player, store) {
 
         zone.appendChild(cmdCard);
     });
+
+    // Drop Zone Logic (Accept only Commanders)
+    zone.ondragover = (e) => {
+        e.preventDefault(); // Essential to allow drop
+        e.dataTransfer.dropEffect = 'move';
+        zone.classList.add('drag-hover');
+    };
+
+    zone.ondragleave = () => {
+        zone.classList.remove('drag-hover');
+    };
+
+    zone.ondrop = (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-hover');
+
+        let targetCardId = null;
+        let sourceZone = 'battlefield';
+
+        try {
+            const raw = e.dataTransfer.getData('application/json');
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (data.playerId === player.id && data.isCommander) {
+                    targetCardId = data.cardId;
+                    sourceZone = data.sourceZone || 'battlefield';
+                }
+            }
+        } catch (err) { /* Ignore */ }
+
+        // Fallback: Store lookup via ID
+        if (!targetCardId) {
+            const txtId = e.dataTransfer.getData('text/plain');
+            if (txtId) {
+                const pZone = store.getState().zones[player.id];
+                // Check Battlefield
+                if (pZone && pZone.battlefield) {
+                    const found = pZone.battlefield.find(c => c.instanceId === txtId);
+                    if (found && found.isCommander) {
+                        targetCardId = found.instanceId;
+                        sourceZone = 'battlefield';
+                    }
+                }
+            }
+        }
+
+        if (targetCardId) {
+            store.dispatch('MOVE_CARD', {
+                playerId: player.id,
+                cardId: targetCardId,
+                destination: 'command',
+                sourceZone: sourceZone
+            });
+        } else {
+            console.warn('Commander Zone Drop Rejected: Not a valid commander.');
+        }
+    };
 
     if (activeCommanders.length === 0) {
         zone.classList.add('is-empty');
