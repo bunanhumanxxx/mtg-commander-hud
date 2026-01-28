@@ -74,7 +74,16 @@ export function renderApp(container, store) {
                                 DECK BUILDER
                                 <span style="font-size: 0.9rem; font-weight: normal; margin-top: 10px; opacity: 0.8; text-shadow: none;">Construct & Manage Decks</span>
                             </button>
+                            </button>
                         </div>
+                        
+                        <button id="legal-btn" style="
+                            margin-top: 3rem; background: transparent; border: none; 
+                            color: #666; font-size: 0.9rem; text-decoration: underline; 
+                            cursor: pointer; opacity: 0.7; transition: opacity 0.2s;
+                        " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+                            権利表記 (Legal Notice)
+                        </button>
                     </div>
                 `;
 
@@ -123,6 +132,48 @@ export function renderApp(container, store) {
                         const modal = new DeckBuilderSetupModal(store);
                         container.appendChild(modal.render());
                     });
+                });
+
+                // Legal Notice Handler
+                document.getElementById('legal-btn').addEventListener('click', () => {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'modal-overlay';
+                    overlay.style.cssText = `
+                        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                        background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 10000;
+                        backdrop-filter: blur(5px);
+                    `;
+
+                    overlay.innerHTML = `
+                        <div class="modal-content" style="
+                            background: #050a14; padding: 2rem; border-radius: 8px;
+                            border: 1px solid var(--neon-blue); width: 90%; max-width: 500px;
+                            color: white; box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+                        ">
+                            <h3 style="color: var(--neon-blue); text-align: center; margin-bottom: 1.5rem; text-transform: uppercase;">権利表記 (Legal Notice)</h3>
+                            <p style="text-align: left; line-height: 1.6; color: #ddd; margin-bottom: 2rem; font-family: sans-serif;">
+                                本アプリはファンコンテンツ・ポリシーに沿った非公式のファンコンテンツです。<br>
+                                ウィザーズ社の認可/許諾は得ていません。題材の一部に、ウィザーズ・オブ・ザ・コースト社の財産を含んでいます。<br><br>
+                                ©Wizards of the Coast LLC.
+                            </p>
+                            <button id="legal-close-btn" style="
+                                width: 100%; padding: 0.8rem; background: transparent; 
+                                border: 1px solid #555; color: #888; cursor: pointer; border-radius: 4px;
+                                text-transform: uppercase; font-weight: bold; transition: all 0.2s;
+                            " onmouseover="this.style.borderColor='var(--neon-blue)'; this.style.color='var(--neon-blue)'" 
+                              onmouseout="this.style.borderColor='#555'; this.style.color='#888'">
+                                CLOSE
+                            </button>
+                        </div>
+                    `;
+
+                    document.body.appendChild(overlay);
+
+                    // Close Handlers
+                    overlay.querySelector('#legal-close-btn').onclick = () => overlay.remove();
+                    overlay.onclick = (e) => {
+                        if (e.target === overlay) overlay.remove();
+                    };
                 });
                 return;
             }

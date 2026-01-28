@@ -1926,6 +1926,152 @@ button:hover {
     animation: fadeIn 0.3s ease-out;
 }
 
+/* --- Mobile Popup Optimization --- */
+
+.setup-modal-content {
+    background: #050a14;
+    border-radius: 10px;
+    border: 1px solid var(--neon-blue);
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Inner div handles scroll */
+}
+
+/* Common Modal Mobile Adjustments */
+@media (max-width: 768px) {
+
+    .modal-content,
+    .setup-modal-content,
+    .search-modal-content,
+    .zone-modal-content,
+    .used-modal-content {
+        width: 95% !important;
+        padding: 1rem !important;
+        max-height: 85vh !important;
+    }
+
+    /* Inner padding adjust for the setups specifically since we moved padding to inner div */
+    .setup-modal-content>div {
+        padding: 1rem !important;
+    }
+
+    h2,
+    h3 {
+        font-size: 1.2rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    /* Increase touch targets */
+    input[type="checkbox"] {
+        width: 24px !important;
+        height: 24px !important;
+    }
+
+    label {
+        font-size: 1rem !important;
+        padding: 4px 0;
+    }
+
+    button {
+        min-height: 44px;
+        /* Touch target size */
+    }
+}
+
+/* Landscape Mode Modal Fixes (Height constrained) */
+/* Landscape Mode Modal Fixes (Height constrained) */
+@media (orientation: landscape) and (max-height: 500px) {
+
+    .modal-content,
+    .setup-modal-content,
+    .search-modal-content,
+    .zone-modal-content,
+    .used-modal-content {
+        width: 95% !important;
+        height: 95vh !important;
+        max-height: 95vh !important;
+        padding: 0.5rem !important;
+        flex-direction: column !important;
+    }
+
+    /* Layout Setup Modal as 2-Column Grid to save vertical space */
+    .setup-modal-content>div {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr;
+        gap: 10px;
+        height: 100%;
+        padding: 0.5rem !important;
+        overflow: hidden !important;
+    }
+
+    /* Force scrolling on the grid container if needed, but ideally we fit content */
+    .setup-modal-content>div {
+        display: flex !important;
+        flex-direction: column !important;
+        overflow-y: auto !important;
+    }
+
+    /* Compact Typography & Spacing */
+    h2,
+    h3 {
+        margin: 0 !important;
+        font-size: 1rem !important;
+        line-height: 1.2;
+    }
+
+    .setup-modal-content label {
+        font-size: 0.8rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* Side-by-side Global Settings */
+    .setup-modal-content>div>div:nth-child(2),
+    /* Player Count */
+    .setup-modal-content>div>div:nth-child(3) {
+        /* Life Setting */
+        display: inline-block;
+        width: 48%;
+        margin-bottom: 5px !important;
+        vertical-align: top;
+    }
+
+    .count-btn,
+    .life-btn {
+        padding: 4px 8px !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Player List Grid */
+    #player-config-list {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .player-row {
+        padding: 2px !important;
+    }
+
+    .player-name-input {
+        padding: 2px !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Ensure Start Button is visible/compact */
+    #start-game-btn {
+        padding: 0.5rem !important;
+        font-size: 1rem !important;
+    }
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -1935,5 +2081,135 @@ button:hover {
     to {
         opacity: 1;
         transform: translate(-50%, 0);
+    }
+}
+
+/* --- Life Counter Mobile Optimization --- */
+
+/* Default Desktop Grid (matches previous JS logic) */
+.lc-player-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+.lc-player-grid[data-player-count="2"] {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.lc-player-grid[data-player-count="3"] {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr;
+}
+
+.lc-player-grid[data-player-count="4"] {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.lc-player-grid[data-player-count="5"],
+.lc-player-grid[data-player-count="6"] {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+/* Base adjustment for smaller buttons/text on smaller desktop windows */
+@media (max-width: 1024px) {
+    .life-counter-app .lc-btn {
+        height: min(60px, 10vmin) !important;
+        font-size: 1.2rem !important;
+    }
+
+    .life-counter-app .life-value {
+        font-size: clamp(3rem, 10vmin, 10rem) !important;
+    }
+}
+
+/* Portrait Mode (Mobile Vertically) */
+@media (orientation: portrait) {
+
+    /* Stack players vertically */
+    .lc-player-grid {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: repeat(var(--p-count), 1fr) !important;
+    }
+
+    .lc-player-grid[data-player-count="2"] {
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    .lc-player-grid[data-player-count="3"] {
+        grid-template-rows: repeat(3, 1fr);
+    }
+
+    .lc-player-grid[data-player-count="4"] {
+        grid-template-rows: repeat(4, 1fr);
+    }
+
+    .lc-player-grid[data-player-count="5"] {
+        grid-template-rows: repeat(5, 1fr);
+    }
+
+    .lc-player-grid[data-player-count="6"] {
+        grid-template-rows: repeat(6, 1fr);
+    }
+
+    /* Specialized Portrait Layout for 3+ Players (Short Panels) */
+    .lc-player-grid[data-player-count="3"] .lc-player-panel,
+    .lc-player-grid[data-player-count="4"] .lc-player-panel,
+    .lc-player-grid[data-player-count="5"] .lc-player-panel,
+    .lc-player-grid[data-player-count="6"] .lc-player-panel {
+        flex-direction: row !important;
+        align-items: center;
+        padding: 4px !important;
+    }
+
+    .lc-player-grid[data-player-count="3"] .lc-player-panel>div:first-child,
+    .lc-player-grid[data-player-count="4"] .lc-player-panel>div:first-child,
+    .lc-player-grid[data-player-count="5"] .lc-player-panel>div:first-child,
+    .lc-player-grid[data-player-count="6"] .lc-player-panel>div:first-child {
+        flex-direction: row !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+        border-bottom: none !important;
+        height: 100%;
+        min-height: 0 !important;
+    }
+
+    /* Small tax buttons on mobile */
+    .lc-player-panel button {
+        min-height: 30px;
+        min-width: 30px;
+    }
+}
+
+/* Mobile Landscape (Smartphone Horizontal) */
+@media (orientation: landscape) and (max-height: 500px) {
+    .lc-player-grid {
+        gap: 4px;
+        padding: 4px;
+    }
+
+    .lc-player-grid[data-player-count="3"],
+    .lc-player-grid[data-player-count="4"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-rows: repeat(2, 1fr) !important;
+    }
+
+    .lc-player-grid[data-player-count="5"],
+    .lc-player-grid[data-player-count="6"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-rows: repeat(2, 1fr) !important;
+    }
+
+    .life-value {
+        font-size: 3rem !important;
+    }
+
+    .lc-btn {
+        height: 40px !important;
+        min-width: 40px !important;
     }
 }

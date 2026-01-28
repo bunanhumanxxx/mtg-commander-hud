@@ -41,23 +41,17 @@ export class LifeCounterApp {
         const sidebar = this._renderSidebar();
         this.refs.sidebar = sidebar;
 
-        // Grid Layout Calculation
+        // Grid Layout Calculation (CSS Handling)
         const pCount = state.players.length;
-        let gridCols = pCount <= 2 ? 1 : pCount <= 4 ? 2 : 3;
-        let gridRows = pCount <= 2 ? 2 : pCount <= 6 ? 2 : 3;
-
-        if (pCount === 1) { gridCols = 1; gridRows = 1; }
-        if (pCount === 2) { gridCols = 1; gridRows = 2; }
-        if (pCount === 3) { gridCols = 3; gridRows = 1; }
-        if (pCount === 4) { gridCols = 2; gridRows = 2; }
-        if (pCount >= 5) { gridCols = 3; gridRows = 2; }
 
         const grid = document.createElement('div');
+        grid.className = 'lc-player-grid';
+        grid.dataset.playerCount = pCount;
+
+        // Base styles that are not layout-specific
         grid.style.cssText = `
             flex: 1; display: grid; 
-            grid-template-columns: repeat(${gridCols}, 1fr);
-            grid-template-rows: repeat(${gridRows}, 1fr);
-            gap: 8px; padding: 8px; /* Slightly increased gap for borders */
+            gap: 8px; padding: 8px;
             overflow: auto; 
             height: 100%;
         `;
