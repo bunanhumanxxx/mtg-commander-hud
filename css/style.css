@@ -2213,3 +2213,189 @@ button:hover {
         min-width: 40px !important;
     }
 }
+
+/* --- Enhanced Mobile Optimization & Start Screen --- */
+
+/* 1. Global Mobile Typography & Touch Targets */
+html {
+    touch-action: manipulation;
+    /* Improves touch response */
+}
+
+@media (max-width: 768px) {
+
+    html,
+    body {
+        font-size: 16px;
+        /* Base size prevents iOS zoom */
+        overflow-x: hidden;
+        /* No horiz scroll */
+    }
+
+    button,
+    a,
+    input,
+    select {
+        min-height: 44px;
+        /* Apple Human Interface Guidelines */
+        min-width: 44px;
+        touch-action: manipulation;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+        font-size: 16px !important;
+        /* Prevent zoom on focus */
+    }
+}
+
+/* 2. Start Screen Styles */
+.startup-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    padding: 2rem;
+    overflow-y: auto;
+    /* Allow scroll on small screens */
+}
+
+.startup-title {
+    color: var(--neon-blue);
+    text-shadow: 0 0 10px var(--neon-blue);
+    font-size: clamp(2rem, 6vw, 4rem);
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    white-space: normal;
+    /* Allow wrap on mobile */
+    text-align: center;
+    margin-bottom: 3rem;
+    line-height: 1.2;
+}
+
+.startup-btn-group {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.startup-btn {
+    flex: 1;
+    min-width: 300px;
+    padding: 2rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 0 5px currentColor;
+    position: relative;
+    overflow: hidden;
+}
+
+.startup-btn span {
+    font-size: 0.9rem;
+    font-weight: normal;
+    margin-top: 10px;
+    opacity: 0.8;
+    text-shadow: none;
+}
+
+/* Specific Button Themes */
+.btn-full {
+    background: rgba(0, 10, 20, 0.8);
+    border: 2px solid var(--neon-blue);
+    color: var(--neon-blue);
+    box-shadow: 0 0 15px var(--neon-blue), inset 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+.btn-full:hover {
+    background: rgba(0, 243, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.btn-life {
+    background: rgba(20, 0, 10, 0.8);
+    border: 2px solid var(--neon-pink);
+    color: var(--neon-pink);
+    box-shadow: 0 0 15px var(--neon-pink), inset 0 0 15px rgba(255, 0, 85, 0.2);
+}
+
+.btn-life:hover {
+    background: rgba(255, 0, 85, 0.3);
+    transform: scale(1.05);
+}
+
+.btn-deck {
+    background: rgba(0, 20, 10, 0.8);
+    border: 2px solid var(--neon-green);
+    color: var(--neon-green);
+    box-shadow: 0 0 15px var(--neon-green), inset 0 0 15px rgba(0, 255, 100, 0.2);
+}
+
+.btn-deck:hover {
+    background: rgba(0, 255, 100, 0.3);
+    transform: scale(1.05);
+}
+
+.legal-notice-btn {
+    margin-top: 3rem;
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 0.9rem;
+    text-decoration: underline;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    min-height: 44px;
+    /* Touch target */
+    display: flex;
+    align-items: center;
+}
+
+.legal-notice-btn:hover {
+    opacity: 1;
+    color: #888;
+}
+
+/* Mobile Adjustments for Start Screen */
+@media (max-width: 768px) {
+    .startup-container {
+        padding: 1rem;
+        justify-content: flex-start;
+        /* Start from top to allow scrolling */
+        padding-top: 3rem;
+    }
+
+    .startup-title {
+        margin-bottom: 2rem;
+        font-size: 2.5rem;
+        /* Readable logic */
+    }
+
+    .startup-btn-group {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .startup-btn {
+        width: 100%;
+        min-width: auto;
+        /* Allow shrink */
+        padding: 1.5rem;
+        min-height: 80px;
+        /* Touch friendly */
+    }
+}

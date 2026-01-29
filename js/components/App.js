@@ -124,8 +124,6 @@ export function renderApp(container, store) {
                     });
                 });
 
-                addHover('start-deck-btn', 'green');
-
                 // Deck Builder Setup
                 document.getElementById('start-deck-btn').addEventListener('click', () => {
                     import('./DeckBuilderSetupModal.js?v=' + Date.now()).then(({ DeckBuilderSetupModal }) => {

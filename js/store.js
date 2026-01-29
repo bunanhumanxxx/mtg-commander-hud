@@ -468,9 +468,22 @@ export class Store {
             if (destination === 'library') {
                 const player = this.state.players.find(p => p.id === playerId);
 
-                // Cleanup
-                card.tapped = false;
-                if (card.counters) card.counters = {};
+                // Cleanup Status (Reset on leaving battlefield)
+                if (sourceZone === 'battlefield' || !sourceZone) { // !sourceZone defaults to battlefield
+                    card.tapped = false;
+                    if (card.counters) card.counters = {};
+                    delete card.attachedTo;
+                    // Restore original stats if modified
+                    if (card.original_stats) {
+                        card.power = card.original_stats.power;
+                        card.toughness = card.original_stats.toughness;
+                        card.type_line = card.original_stats.type_line;
+                        delete card.original_stats;
+                    }
+                } else {
+                    card.tapped = false;
+                    if (card.counters) card.counters = {};
+                }
 
                 if (zone.simLibrary) {
                     zone.simLibrary.push(card); // Add to active Sim Deck
@@ -493,6 +506,21 @@ export class Store {
                 }
 
                 if (targetZone[destination]) {
+                    // RESET STATUS if moving FROM battlefield TO non-battlefield
+                    // (sourceZone missing implies battlefield in current logic, see top of _moveCard)
+                    if ((!sourceZone || sourceZone === 'battlefield') && destination !== 'battlefield') {
+                        card.tapped = false;
+                        if (card.counters) card.counters = {};
+                        delete card.attachedTo;
+
+                        if (card.original_stats) {
+                            card.power = card.original_stats.power;
+                            card.toughness = card.original_stats.toughness;
+                            card.type_line = card.original_stats.type_line;
+                            delete card.original_stats;
+                        }
+                    }
+
                     if (destination === 'hand') {
                         const tPlayer = this.state.players.find(p => p.id === targetPlayerId);
                         tPlayer.handCount++;
